@@ -1,0 +1,163 @@
+---
+import Layout from '../layouts/Layout.astro';
+import '../styles/billing.css';
+import { Image } from 'astro:assets';
+import defaultMemberLogo from '../assets/default-team.png';
+
+let isProUser = true;
+let isBusinessUser = false;
+---
+
+<Layout title="Hacret - Billing">
+  <main class="billing-container">
+    <section class="profile-section">
+      <div class="profile-header">
+        <h1>Billing</h1>
+        <p class="subtitle">Manage your subscription plan</p>
+      </div>
+      <div class="billing-content">
+        <div class="current-plan card">
+          <h3>Your Current Plan</h3>
+          <div class="plan-details">
+            {isBusinessUser ? (
+              <>
+                <div class="plan-name">
+                  <h4>Business</h4>
+                  <span class="badge active">Active</span>
+                </div>
+                <a href="/pricing" class="pricing-link">View all plan features →</a>
+                <div class="plan-price">
+                  <span class="amount">$99</span>
+                  <span class="period">/month</span>
+                </div>
+                <p class="renewal-date">Renews on <strong>June 15, 2024</strong></p>
+              </>
+            ) : isProUser ? (
+              <>
+                <div class="plan-name">
+                  <h4>Pro</h4>
+                  <span class="badge active">Active</span>
+                </div>
+                <a href="/pricing" class="pricing-link">View all plan features →</a>
+                <div class="plan-price">
+                  <span class="amount">$19</span>
+                  <span class="period">/month</span>
+                </div>
+                <p class="renewal-date">Renews on <strong>June 15, 2024</strong></p>
+              </>
+            ) : (
+              <>
+                <div class="plan-name">
+                  <h4>Free</h4>
+                  <span class="badge">Inactive</span>
+                </div>
+                <a href="/pricing" class="pricing-link">Compare all plan features →</a>
+                <div class="plan-price">
+                  <span class="amount">$0</span>
+                  <span class="period">/month</span>
+                </div>
+                <p class="renewal-date">Upgrade to unlock all features</p>
+              </>
+            )}
+            <div class="plan-actions">
+              {isBusinessUser ? (
+                <>
+                  <button class="btn btn-outline" onclick="window.location.href='/contact'">Contact Us for a Custom Plan</button>
+                  <button class="btn btn-danger" id="cancelSubscriptionBtn">Cancel Subscription</button>
+                </>
+              ) : isProUser ? (
+                <>
+                  <button class="btn btn-primary" onclick="window.location.href='/upgrade?to=business'">Upgrade to Business</button>
+                  <button class="btn btn-danger" id="cancelSubscriptionBtn">Cancel Subscription</button>
+                </>
+              ) : (
+                <button class="btn btn-primary" onclick="window.location.href='/upgrade?to=pro'">Upgrade to Pro</button>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <p id="error-message"></p>
+    </section>
+  </main>
+
+  <div id="cancelModal" class="modal">
+    <div class="modal-content">
+      <span class="close">&times;</span>
+      <h3>Cancel Subscription</h3>
+      <p>We're sorry to see you go! If you cancel your subscription:</p>
+      <ul>
+        <li>You'll lose access to Pro or Business features immediately</li>
+        <li>Your account will revert to the Free plan</li>
+        <li>Any data beyond Free plan limits may be archived</li>
+      </ul>
+      <p>Would you like to continue with cancellation?</p>
+      <div class="modal-actions">
+        <button class="btn btn-outline" id="cancelModalClose">No, Keep My Plan</button>
+        <button class="btn btn-danger" id="confirmCancel">Yes, Cancel Subscription</button>
+      </div>
+    </div>
+  </div>
+</Layout>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const emailCode = localStorage.getItem('emailCode');
+    
+    if (!emailCode) {
+      window.location.href = '/login';
+      return;
+    }
+
+    const userPlan = localStorage.getItem('userPlan');
+    const isProUser = userPlan === 'pro';
+    const isBusinessUser = userPlan === 'business';
+
+    if (isProUser) {
+      document.documentElement.setAttribute('data-user-plan', 'pro');
+    } else if (isBusinessUser) {
+      document.documentElement.setAttribute('data-user-plan', 'business');
+    } else {
+      document.documentElement.setAttribute('data-user-plan', 'free');
+    }
+
+    const modal = document.getElementById("cancelModal");
+    const btn = document.getElementById("cancelSubscriptionBtn");
+    const span = document.querySelector(".close");
+    const cancelClose = document.getElementById("cancelModalClose");
+    const confirmCancel = document.getElementById("confirmCancel");
+
+    if (btn) {
+      btn.onclick = function() {
+        modal.style.display = "block";
+      }
+    }
+
+    if (span) {
+      span.onclick = function() {
+        modal.style.display = "none";
+      }
+    }
+
+    if (cancelClose) {
+      cancelClose.onclick = function() {
+        modal.style.display = "none";
+      }
+    }
+
+    if (confirmCancel) {
+      confirmCancel.onclick = function() {
+        localStorage.setItem('userPlan', 'free');
+        modal.style.display = "none";
+        window.location.reload();
+      }
+    }
+
+    window.onclick = function(event) {
+      if (event.target == modal) {
+        modal.style.display = "none";
+      }
+    }
+  });
+</script>
