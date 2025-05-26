@@ -1,0 +1,58 @@
+---
+import Layout from '../layouts/Layout.astro';
+import '../styles/chatbots.css';
+
+const mockchatbots = [
+  {
+    id: '1',
+    title: 'Customer Feedback chatbot',
+    messages_used: '400/1000',
+    lastEdited: '2023-05-15',
+    status: 'active'
+  },
+  {
+    id: '2',
+    title: 'Employee Onboarding',
+    messages_used: '100/1000',
+    lastEdited: '2023-05-10',
+    status: 'draft'
+  }
+];
+---
+
+<Layout title="My chatbots | SmartFlowchatbots">
+  <main class="chatbots-container">
+    <div class="chatbots-header">
+      <h1>My chatbots</h1>
+      <div class="chatbots-header-buttons">
+        <a href="/chatbots/new" class="btn-outline">Create New chatbot</a>
+        <a href="/billing" class="btn-outline">Billing</a>
+      </div>
+    </div>
+
+    <div class="chatbots-grid">
+      {mockchatbots.map(chatbot => (
+        <div class="chatbot-card">
+          <div class="chatbot-card-header">
+            <h3>{chatbot.title}</h3>
+            <span class={`status-badge ${chatbot.status}`}>{chatbot.status}</span>
+          </div>
+          <div class="chatbot-stats">
+            <div class="stat">
+              <span class="stat-label">Messages Used</span>
+              <span class="stat-value">{chatbot.messages_used}</span>
+            </div>
+            <div class="stat">
+              <span class="stat-label">Last Edited</span>
+              <span class="stat-value">{chatbot.lastEdited}</span>
+            </div>
+          </div>
+          <div class="chatbot-actions">
+            <a href={`/chatbots/edit/${chatbot.id}`} class="btn-outline">Edit</a>
+            <a href={`/chatbots/responses/${chatbot.id}`} class="btn-outline">View Data</a>
+          </div>
+        </div>
+      ))}
+    </div>
+  </main>
+</Layout>
