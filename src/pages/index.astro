@@ -1,0 +1,87 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Banner from '../components/LandingBanner.astro';
+import '../styles/index.css';
+
+const features = [
+  {
+    title: "Context-Aware Conversations",
+    description: "Chatbots that understand natural language, remember context, and handle follow-up questions",
+    icon: "💬"
+  },
+  {
+    title: "Smart Data Capture",
+    description: "Automatically extract and store customer information, preferences, and requests",
+    icon: "🔍"
+  },
+  {
+    title: "Omnichannel Deployment",
+    description: "Launch on Slack, Discord, as a hosted web chat, or integrated directly in your website",
+    icon: "🌐"
+  },
+  {
+    title: "Document Intelligence",
+    description: "Answer questions using your knowledge base, PDFs, or help docs with accurate citations",
+    icon: "📄"
+  },
+  {
+    title: "No-Code Training",
+    description: "Teach your bot through conversation examples - no technical skills required",
+    icon: "🎓"
+  },
+];
+---
+
+<Layout title="Hacret - No-Code AI Chatbots">
+  <Banner />
+  <section class="hero-banner">
+    <div class="hero-content">
+      <h1>No-Code AI Chatbots</h1>
+      <p class="subtitle">Create intelligent AI assistants for Slack, Discord, and your own websites without writing a single line of code.</p>
+      <div class="cta-buttons">
+        <a href="/signup" class="btn-primary btn-large">Get Started Free</a>
+        <a href="/demo" class="btn-outline btn-large">See Live Demo</a>
+      </div>
+    </div>
+    <div class="hero-image">
+      <img src="/chatbot-screenshot.png" alt="Hacret AI chatbot interface example" />
+    </div>
+  </section>
+
+  <section id="features" class="features-section">
+    <h2>No-Code AI Chatbot Features</h2>
+    <div class="features-grid">
+      {features.map((feature) => (
+        <div class="feature-card gradient-bg">
+          <div class="feature-icon">{feature.icon}</div>
+          <h3>{feature.title}</h3>
+          <p>{feature.description}</p>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <section class="cta-section gradient-bg">
+    <h2>Ready to Transform Your Conversations?</h2>
+    <p>Start building intelligent chatbots with natural understanding today.</p>
+    <br><br>
+    <a href="/signup" class="btn-primary btn-large">Try Hacret Free</a>
+  </section>
+
+  <footer class="footer gradient-bg">
+    <div class="logo-container">
+      <img src="/favicon.png" alt="Hacret Logo" class="logo" />
+      <span class="logo-text">Hacret</span>
+    </div>
+
+    <div class="footer-links">
+      <a href="/privacy" class="btn-outline">Privacy</a>
+      <a href="/terms" class="btn-outline">Terms</a>
+      <a href="/contact" class="btn-outline">Contact</a>
+    </div>
+
+    <p class="copyright">
+      © <script>document.write(new Date().getFullYear())</script> AnsaGroup. All rights reserved.
+    </p>
+  </footer>
+</Layout>

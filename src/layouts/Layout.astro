@@ -1,0 +1,178 @@
+---
+import hashes from './csp-hashes.json';
+
+interface Props {
+    title: string;
+}
+
+const { title } = Astro.props;
+---
+
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="description" content="Hacret - No-Code AI Chatbots" />
+		<meta name="viewport" content="width=device-width" />
+    <link rel="icon" type="image/png" href="/favicon.png" />
+		<meta name="generator" content={Astro.generator} />
+		<title>{title}</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <meta http-equiv="Content-Security-Policy" content="
+      default-src 'self';
+      script-src 'self' https://cdnjs.cloudflare.com 'unsafe-inline' 'unsafe-eval';
+      style-src 'self' https://cdnjs.cloudflare.com https://fonts.googleapis.com 'unsafe-inline';
+      img-src 'self' data: blob: https:;
+      connect-src 'self' blob: data: https:;
+      font-src 'self' https://fonts.gstatic.com;
+      media-src 'self' blob:;
+      object-src 'none';
+      base-uri 'self';
+      form-action 'self';
+      block-all-mixed-content;
+      upgrade-insecure-requests;"
+    >
+    
+    <meta http-equiv="Strict-Transport-Security" content="max-age=31536000; includeSubDomains; preload">
+    <meta http-equiv="X-Content-Type-Options" content="nosniff">
+    <meta http-equiv="X-XSS-Protection" content="1; mode=block">
+    <meta name="referrer" content="no-referrer-when-downgrade">
+    <meta http-equiv="Permissions-Policy" content="geolocation=(self), microphone=()">
+	</head>
+	<body>
+		<slot />
+	</body>
+</html>
+
+<style is:global>
+  :root {
+    --background-color: #0f172a;
+    --text-color: #f8fafc;
+    --accent: 99, 102, 241;
+    --accent-light: 165, 180, 252;
+    --accent-dark: 55, 48, 163;
+    --accent-gradient: linear-gradient(
+      45deg,
+      rgb(var(--accent)),
+      rgb(var(--accent-light)) 30%,
+      rgba(255,255,255,0.8) 60%
+    );
+    --primary: rgb(var(--accent));
+    --primary-dark: rgb(var(--accent-dark));
+    --secondary: rgb(var(--accent-light));
+  }
+
+	html {
+		font-family: 'Inter', system-ui, sans-serif;
+		background: var(--background-color);
+		color: var(--text-color);
+	}
+
+	code {
+		font-family:
+			Menlo,
+			Monaco,
+			Lucida Console,
+			Liberation Mono,
+			DejaVu Sans Mono,
+			Bitstream Vera Sans Mono,
+			Courier New,
+			monospace;
+		background: rgba(255, 255, 255, 0.1);
+		color: var(--text-color);
+		padding: 0.2em 0.4em;
+		border-radius: 4px;
+	}
+	
+	a {
+		color: var(--primary);
+		text-decoration: none;
+		transition: color 0.3s ease;
+	}
+
+	a:hover {
+		color: var(--secondary);
+	}
+
+	* {
+		box-sizing: border-box;
+	}
+
+	body {
+		margin: 0;
+		padding: 0;
+		min-height: 100vh;
+  }
+
+	.gradient-bg {
+		background: linear-gradient(
+			45deg,
+			rgba(10, 10, 10, 0.7),
+			rgba(30, 30, 30, 0.7)
+		);
+		border-radius: 8px;
+		padding: 20px;
+	}
+
+	@media (max-width: 768px) {
+		html {
+			font-size: 90%;
+		}
+	}
+
+  .btn {
+    display: inline-block;
+    padding: 10px 20px;
+    border-radius: 5px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+  }
+
+  .btn-primary {
+    background-color: var(--primary);
+    color: var(--white);
+  }
+
+  .btn-primary:hover {
+    background-color: var(--primary-dark);
+    transform: translateY(-2px);
+  }
+
+  .btn-outline {
+    border: 2px solid var(--primary);
+    color: var(--primary);
+    background-color: transparent;
+    padding: 0.6em 1.2em;
+    font-weight: 500;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    text-align: center;
+  }
+
+  .btn-outline:hover {
+    background-color: var(--primary);
+    color: var(--white);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    transform: translateY(-1px);
+  }
+
+  .btn-secondary {
+    background-color: var(--secondary);
+    color: var(--dark);
+  }
+
+  .btn-secondary:hover {
+    background-color: var(--primary);
+    color: var(--white);
+  }
+
+  .btn-large {
+    padding: 12px 30px;
+    font-size: 1.1rem;
+  }
+</style>
