@@ -3,9 +3,6 @@ import Layout from '../layouts/Layout.astro';
 import '../styles/billing.css';
 import { Image } from 'astro:assets';
 import defaultMemberLogo from '../assets/default-team.png';
-
-let isProUser = true;
-let isBusinessUser = false;
 ---
 
 <Layout title="Hacret - Billing">
@@ -18,67 +15,14 @@ let isBusinessUser = false;
       <div class="billing-content">
         <div class="current-plan card">
           <h3>Your Current Plan</h3>
-          <div class="plan-details">
-            {isBusinessUser ? (
-              <>
-                <div class="plan-name">
-                  <h4>Business</h4>
-                  <span class="badge active">Active</span>
-                </div>
-                <a href="/pricing" class="pricing-link">View all plan features →</a>
-                <div class="plan-price">
-                  <span class="amount">$99</span>
-                  <span class="period">/month</span>
-                </div>
-                <p class="renewal-date">Renews on <strong>June 15, 2024</strong></p>
-              </>
-            ) : isProUser ? (
-              <>
-                <div class="plan-name">
-                  <h4>Pro</h4>
-                  <span class="badge active">Active</span>
-                </div>
-                <a href="/pricing" class="pricing-link">View all plan features →</a>
-                <div class="plan-price">
-                  <span class="amount">$19</span>
-                  <span class="period">/month</span>
-                </div>
-                <p class="renewal-date">Renews on <strong>June 15, 2024</strong></p>
-              </>
-            ) : (
-              <>
-                <div class="plan-name">
-                  <h4>Free</h4>
-                  <span class="badge">Inactive</span>
-                </div>
-                <a href="/pricing" class="pricing-link">Compare all plan features →</a>
-                <div class="plan-price">
-                  <span class="amount">$0</span>
-                  <span class="period">/month</span>
-                </div>
-                <p class="renewal-date">Upgrade to unlock all features</p>
-              </>
-            )}
-            <div class="plan-actions">
-              {isBusinessUser ? (
-                <>
-                  <button class="btn btn-outline" onclick="window.location.href='/contact'">Contact Us for a Custom Plan</button>
-                  <button class="btn btn-danger" id="cancelSubscriptionBtn">Cancel Subscription</button>
-                </>
-              ) : isProUser ? (
-                <>
-                  <button class="btn btn-primary" onclick="window.location.href='/upgrade?to=business'">Upgrade to Business</button>
-                  <button class="btn btn-danger" id="cancelSubscriptionBtn">Cancel Subscription</button>
-                </>
-              ) : (
-                <button class="btn btn-primary" onclick="window.location.href='/upgrade?to=pro'">Upgrade to Pro</button>
-              )}
-            </div>
+          <div id="plan-details" class="plan-details">
+            <p>Loading your plan information...</p>
           </div>
+          <div id="plan-actions" class="plan-actions">
+          </div>
+          <p id="error-message"></p>
         </div>
       </div>
-
-      <p id="error-message"></p>
     </section>
   </main>
 
@@ -103,36 +47,217 @@ let isBusinessUser = false;
 
 <script>
   document.addEventListener('DOMContentLoaded', () => {
+    let isProUser = false;
+    let isBusinessUser = false;
+    const BASE_URL = window.location.origin;
+    const redirectURL = `${BASE_URL}/billing`;
     const emailCode = localStorage.getItem('emailCode');
+    const message = document.getElementById('error-message');
+    const planDetails = document.getElementById('plan-details');
+    const planActions = document.getElementById('plan-actions');
     
     if (!emailCode) {
       window.location.href = '/login';
       return;
     }
 
-    const userPlan = localStorage.getItem('userPlan');
-    const isProUser = userPlan === 'pro';
-    const isBusinessUser = userPlan === 'business';
+    async function handlePaymentStatus() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const paymentStatus = urlParams.get("status");
+      const paymentId = urlParams.get("payment_id");
 
-    if (isProUser) {
-      document.documentElement.setAttribute('data-user-plan', 'pro');
-    } else if (isBusinessUser) {
-      document.documentElement.setAttribute('data-user-plan', 'business');
+      if (paymentStatus === "succeeded") {
+        try {
+          const response = await fetch('/api/update-plan', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              emailCode: localStorage.getItem('emailCode'), 
+              paymentId: paymentId
+            })
+          });
+
+          const result = await response.json();
+          
+          if (result.redirect == '/login') {
+            localStorage.removeItem('emailCode');
+            message.textContent = result.message;
+            message.style.color = '#B71C1C';
+            setTimeout(() => {
+              window.location.href = result.redirect;
+            }, 1500);
+            return;
+          }
+
+          if (response.status === 400) {
+            message.textContent = result.message;
+            message.style.color = '#FFC107';
+            return;
+          } else if (response.status === 500) {
+            message.textContent = result.message; 
+            message.style.color = '#F44336';
+            return;
+          }
+
+          if (!response.ok) {
+            throw new Error(result.message || result.error || 'Failed to update your plan');
+          }
+          
+          renderPlan();
+
+          message.textContent = "Payment successful! Your plan has been updated.";
+          message.style.color = '#4CAF50';
+        } catch (error) {
+          message.textContent = error.message;
+          message.style.color = '#B71C1C';
+        }
     } else {
-      document.documentElement.setAttribute('data-user-plan', 'free');
+        message.textContent = "Payment failed or cancelled. Please try again.";
+        message.style.color = '#F44336';
+      }  
+    }
+
+    if (window.location.search.includes("payment_id") && window.location.search.includes("status")) {
+      handlePaymentStatus();
+    }
+
+    function renderPlan() {
+      if (isBusinessUser) {
+        planDetails.innerHTML = `
+          <div class="plan-name">
+            <h4>Business</h4>
+            <span class="badge active">Active</span>
+          </div>
+          <a href="/pricing" class="pricing-link">View all plan features →</a>
+          <div class="plan-price">
+            <span class="amount">$99</span>
+            <span class="period">/month</span>
+          </div>
+          <p class="renewal-date">Renews on <strong>June 15, 2024</strong></p>
+        `;
+        planActions.innerHTML = `
+          <button class="btn btn-outline" onclick="window.location.href='/contact'">Contact Us for a Custom Plan</button>
+          <button class="btn btn-danger" id="cancelSubscriptionBtn">Cancel Subscription</button>
+        `;
+      } else if (isProUser) {
+        planDetails.innerHTML = `
+          <div class="plan-name">
+            <h4>Pro</h4>
+            <span class="badge active">Active</span>
+          </div>
+          <a href="/pricing" class="pricing-link">View all plan features →</a>
+          <div class="plan-price">
+            <span class="amount">$19</span>
+            <span class="period">/month</span>
+          </div>
+          <p class="renewal-date">Renews on <strong>June 15, 2024</strong></p>
+        `;
+        planActions.innerHTML = `
+          <button class="btn btn-primary" id="upgradeToBusiness">Upgrade to Business</button>
+          <button class="btn btn-danger" id="cancelSubscriptionBtn">Cancel Subscription</button>
+        `;
+
+        document.addEventListener('click', (e) => {
+          if (e.target && e.target.id === 'upgradeToBusiness') {
+            const redirectURL = `${window.location.origin}/billing`;
+            const encodedRedirect = encodeURIComponent(redirectURL);
+            const paymentURL = `https://checkout.dodopayments.com/buy/pdt_7NR5zqHCZtltX7k21VGP5?quantity=1&redirect_url=${encodedRedirect}`;
+            window.location.href = paymentURL;
+          }
+        });
+      } else {
+        planDetails.innerHTML = `
+          <div class="plan-name">
+            <h4>Free</h4>
+            <span class="badge">Inactive</span>
+          </div>
+          <a href="/pricing" class="pricing-link">Compare all plan features →</a>
+          <div class="plan-price">
+            <span class="amount">$0</span>
+            <span class="period">/month</span>
+          </div>
+          <p class="renewal-date">Upgrade to unlock all features</p>
+        `;
+        planActions.innerHTML = `
+          <button class="btn btn-primary" id="upgradeToPro">Upgrade to Pro</button>
+        `;
+
+        document.addEventListener('click', (e) => {
+          if (e.target && e.target.id === 'upgradeToPro') {
+            const redirectURL = `${window.location.origin}/billing`;
+            const encodedRedirect = encodeURIComponent(redirectURL);
+            const paymentURL = `https://checkout.dodopayments.com/buy/pdt_IwvOy1RQ0NzKldpDy0n6u?quantity=1&redirect_url=${encodedRedirect}`;
+            window.location.href = paymentURL;
+          }
+        });
+      }
+      
+      const btn = document.getElementById("cancelSubscriptionBtn");
+      if (btn) {
+        btn.onclick = function() {
+          document.getElementById("cancelModal").style.display = "block";
+        }
+      }
+    }
+
+    async function getTier() {
+      try {
+        const response = await fetch('/api/check-tier', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            emailCode: localStorage.getItem('emailCode') 
+          })
+        });
+
+        const result = await response.json();
+        
+        if (result.redirect == '/login') {
+          localStorage.removeItem('emailCode');
+          message.textContent = result.message;
+          message.style.color = '#B71C1C';
+          setTimeout(() => {
+            window.location.href = result.redirect;
+          }, 1500);
+          return;
+        }
+
+        if (response.status === 400) {
+          message.textContent = result.message;
+          message.style.color = '#FFC107';
+          return;
+        } else if (response.status === 500) {
+          message.textContent = result.message; 
+          message.style.color = '#F44336';
+          return;
+        }
+
+        if (!response.ok) {
+          throw new Error(result.message || result.error || 'Failed to retrieve your plan');
+        }
+
+        sessionStorage.setItem('isProUser', result.isProUser || '');
+        sessionStorage.setItem('isBusinessUser', result.isBusinessUser || '');
+
+        isProUser = result.isProUser || false;
+        isBusinessUser = result.isBusinessUser || false;
+        
+        renderPlan();
+
+      } catch (error) {
+        message.textContent = error.message;
+        message.style.color = '#B71C1C';
+      }
     }
 
     const modal = document.getElementById("cancelModal");
-    const btn = document.getElementById("cancelSubscriptionBtn");
     const span = document.querySelector(".close");
     const cancelClose = document.getElementById("cancelModalClose");
     const confirmCancel = document.getElementById("confirmCancel");
-
-    if (btn) {
-      btn.onclick = function() {
-        modal.style.display = "block";
-      }
-    }
 
     if (span) {
       span.onclick = function() {
@@ -158,6 +283,14 @@ let isBusinessUser = false;
       if (event.target == modal) {
         modal.style.display = "none";
       }
+    }
+
+    if (!sessionStorage.getItem('isProUser') || !sessionStorage.getItem('isBusinessUser')) {
+      getTier();
+    } else {
+      isProUser = sessionStorage.getItem('isProUser') === 'true';
+      isBusinessUser = sessionStorage.getItem('isBusinessUser') === 'true';
+      renderPlan();
     }
   });
 </script>

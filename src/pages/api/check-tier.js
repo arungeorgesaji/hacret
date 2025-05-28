@@ -1,7 +1,6 @@
 export const prerender = false;
 import { Pool } from 'pg';
-import { generateSecretKeyHash, generateCode, generateVerificationURL } from "../../lib/generateCodes.js";
-import { sendVerificationEmail } from "../../lib/sendVerificationEmail.js";
+import { generateSecretKeyHash, generateCode, decryptCode, verifyCode } from "../../lib/generateCodes.js";
 
 const pool = new Pool({
   user: import.meta.env.DB_USER,
@@ -14,34 +13,12 @@ const pool = new Pool({
   connectionTimeoutMillis: 2000,
 });
 
-const product_name = import.meta.env.PRODUCT_NAME;
-const verification_secret = generateSecretKeyHash(import.meta.env.VERIFICATION_SECRET);
 const email_secret = generateSecretKeyHash(import.meta.env.EMAIL_SECRET);
-const password_secret = generateSecretKeyHash(import.meta.env.PASSWORD_SECRET);
-const timestamp_secret = generateSecretKeyHash(import.meta.env.TIMESTAMP_SECRET);
-const attempt_timestamp_secret = generateSecretKeyHash(import.meta.env.ATTEMPT_TIMESTAMP_SECRET);
-
-const emailPool = [];
-let currentEmailIndex = 0;
-
-let i = 1;
-while (true) {
-  const address = import.meta.env[`GMAIL_ADDRESS_${i}`];
-  const password = import.meta.env[`GMAIL_PASSWORD_${i}`];
-  if (!address || !password) break;
-  
-  emailPool.push({
-    address,
-    password,
-    index: i
-  });
-  i++;
-}
 
 export async function POST({ request }) {
   const origin = request.headers.get('origin');
   const requestUrl = new URL(request.url);
-
+   
   const getRootDomain = (hostname) => {
     const parts = hostname.split('.');
     return parts.slice(-2).join('.'); 
@@ -88,56 +65,38 @@ export async function POST({ request }) {
       });
     }
 
-    const email = requestBody.email;
-    const password = requestBody.password;
+    const emailCode = requestBody.emailCode;
 
-    if (!email || !password) {
+    if (!emailCode || !verifyCode(email_secret, emailCode)) {
       return new Response(JSON.stringify({ 
-        error: 'Missing required fields',
-        message: 'Both email and password are required'
+        error: 'Invalid email code',
+        message: 'Invalid email code. Redirecting to login page...',
+        redirect: '/login'
       }), {
-        status: 400,
+        status: 403,
         headers: { 'Content-Type': 'application/json' }
       });
     }
 
+    const email = emailCode.slice(0, emailCode.indexOf(':'));
+    let isPro = false;
+    let isBusiness = false;
+
     const client = await pool.connect();
     try {
-      const profileQuery = 'SELECT email FROM profiles WHERE email = $1';
+      const profileQuery = 'SELECT is_pro, is_business FROM profiles WHERE email = $1';
       const profileResult = await client.query(profileQuery, [email]);
 
-      if (profileResult.rows.length === 0) {
-        return new Response(JSON.stringify({
-          error: 'Authentication failed',
-          message: 'No account found with this email address.'
-        }), {
-          status: 401,
-          headers: { 'Content-Type': 'application/json' }
-        });
-      }
-
-      const current_time = Math.floor(Date.now() / 1000);
-      const current_time_string = String(current_time);
-
-      const { success } = await sendVerificationEmail(
-        emailPool, 
-        verification_secret,
-        product_name, 
-        email, 
-        password,
-        current_time_string, 
-      );
-
-      if (!success) {
-        throw new Error('Failed to send verification email');
-      }
+      let { is_pro: isPro, is_business: isBusiness } = profileResult.rows[0];
 
     } finally {
       client.release();
     }
-
+    
     return new Response(JSON.stringify({ 
-      verificationURL: generateVerificationURL(email_secret, email, password_secret, password, timestamp_secret, current_time_string, attempt_timestamp_secret, String(current_time - 10))
+      isPro : isPro,
+      isBusiness : isBusiness,
+      message: 'Profile data retrieved successfully'
     }), {
       status: 200,
       headers: { 
@@ -148,10 +107,10 @@ export async function POST({ request }) {
     });
 
   } catch (error) {
-    console.error('Failed to Reset Password:', error);
+    console.error('Registration error:', error);
     
     return new Response(JSON.stringify({ 
-      error: 'Failed to Reset Password',
+      error: 'Registration failed',
       message: error.message,
       details: process.env.NODE_ENV === 'development' ? error.stack : undefined
     }), {
@@ -175,7 +134,7 @@ export async function OPTIONS({ request }) {
 
   const apiRootDomain = getRootDomain(requestUrl.hostname);
   const originRootDomain = origin ? getRootDomain(new URL(origin).hostname) : null;
-
+  
   const isAllowedOrigin = originRootDomain === apiRootDomain;
   
   return new Response(null, {

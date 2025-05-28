@@ -22,12 +22,19 @@ const attempt_timestamp_secret = generateSecretKeyHash(import.meta.env.ATTEMPT_T
 export async function POST({ request }) {
   const origin = request.headers.get('origin');
   const requestUrl = new URL(request.url);
-  const apiOrigin = `${requestUrl.protocol}//${requestUrl.host}`;
+
+  const getRootDomain = (hostname) => {
+    const parts = hostname.split('.');
+    return parts.slice(-2).join('.'); 
+  };
+
+  const apiRootDomain = getRootDomain(requestUrl.hostname);
+  const originRootDomain = origin ? getRootDomain(new URL(origin).hostname) : null;
     
-  if (origin && origin !== apiOrigin) {
+  if (origin && originRootDomain !== apiRootDomain) {
     return new Response(JSON.stringify({ 
-      error: 'Unauthorized origin',
-      message: 'Requests must come from the same origin'
+      error: 'forbidden',
+      message: 'Access Denied'
     }), {
       status: 403,
       headers: { 
@@ -248,9 +255,16 @@ export async function POST({ request }) {
 export async function OPTIONS({ request }) {
   const origin = request.headers.get('origin');
   const requestUrl = new URL(request.url);
-  const apiOrigin = `${requestUrl.protocol}//${requestUrl.host}`;
-  
-  const isAllowedOrigin = origin === apiOrigin;
+
+  const getRootDomain = (hostname) => {
+    const parts = hostname.split('.');
+    return parts.slice(-2).join('.'); 
+  };
+
+  const apiRootDomain = getRootDomain(requestUrl.hostname);
+  const originRootDomain = origin ? getRootDomain(new URL(origin).hostname) : null;
+
+  const isAllowedOrigin = originRootDomain === apiRootDomain;
   
   return new Response(null, {
     status: isAllowedOrigin ? 204 : 403,
