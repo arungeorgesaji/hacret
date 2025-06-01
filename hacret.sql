@@ -4,7 +4,8 @@ create table profiles (
   is_pro boolean not null default false,
   is_business boolean not null default false,
   max_chatbots int not null default 1,
-  active_chatbots int not null default 0
+  active_chatbots int not null default 0,
+  subscription_id text not null default ''
 );
 
 create table chatbots (

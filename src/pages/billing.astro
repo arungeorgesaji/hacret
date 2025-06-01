@@ -64,9 +64,9 @@ import defaultMemberLogo from '../assets/default-team.png';
     async function handlePaymentStatus() {
       const urlParams = new URLSearchParams(window.location.search);
       const paymentStatus = urlParams.get("status");
-      const paymentId = urlParams.get("payment_id");
+      const subscriptionId = urlParams.get("subscription_id");
 
-      if (paymentStatus === "succeeded") {
+      if (paymentStatus === "active") {
         try {
           const response = await fetch('/api/update-plan', {
             method: 'POST',
@@ -75,7 +75,7 @@ import defaultMemberLogo from '../assets/default-team.png';
             },
             body: JSON.stringify({
               emailCode: localStorage.getItem('emailCode'), 
-              paymentId: paymentId
+              subscriptionId: subscriptionId
             })
           });
 
@@ -104,6 +104,16 @@ import defaultMemberLogo from '../assets/default-team.png';
           if (!response.ok) {
             throw new Error(result.message || result.error || 'Failed to update your plan');
           }
+
+          if (result.product_type === 'business') {
+            isBusinessUser = true;
+            isProUser = false;
+          } else if (result.product_type === 'pro') {
+            isProUser = true;
+            isBusinessUser = false;
+          } else {
+            throw new Error(result.message || result.error || 'Failed to update your plan');
+          }
           
           renderPlan();
 
@@ -119,7 +129,7 @@ import defaultMemberLogo from '../assets/default-team.png';
       }  
     }
 
-    if (window.location.search.includes("payment_id") && window.location.search.includes("status")) {
+    if (window.location.search.includes("subscription_id") && window.location.search.includes("status")) {
       handlePaymentStatus();
     }
 
@@ -163,7 +173,7 @@ import defaultMemberLogo from '../assets/default-team.png';
           if (e.target && e.target.id === 'upgradeToBusiness') {
             const redirectURL = `${window.location.origin}/billing`;
             const encodedRedirect = encodeURIComponent(redirectURL);
-            const paymentURL = `https://checkout.dodopayments.com/buy/pdt_7NR5zqHCZtltX7k21VGP5?quantity=1&redirect_url=${encodedRedirect}`;
+            const paymentURL = `https://test.checkout.dodopayments.com/buy/pdt_7NR5zqHCZtltX7k21VGP5?quantity=1&redirect_url=${encodedRedirect}`;
             window.location.href = paymentURL;
           }
         });
@@ -188,7 +198,7 @@ import defaultMemberLogo from '../assets/default-team.png';
           if (e.target && e.target.id === 'upgradeToPro') {
             const redirectURL = `${window.location.origin}/billing`;
             const encodedRedirect = encodeURIComponent(redirectURL);
-            const paymentURL = `https://checkout.dodopayments.com/buy/pdt_IwvOy1RQ0NzKldpDy0n6u?quantity=1&redirect_url=${encodedRedirect}`;
+            const paymentURL = `https://test.checkout.dodopayments.com/buy/pdt_IwvOy1RQ0NzKldpDy0n6u?quantity=1&redirect_url=${encodedRedirect}`;
             window.location.href = paymentURL;
           }
         });

@@ -1,4 +1,5 @@
 export const prerender = false;
+import DodoPayments from 'dodopayments';
 import { Pool } from 'pg';
 import { generateSecretKeyHash, generateCode, decryptCode, verifyCode } from "../../lib/generateCodes.js";
 
@@ -71,6 +72,7 @@ export async function POST({ request }) {
     }
 
     const emailCode = requestBody.emailCode;
+    const subscriptionId = requestBody.subscriptionId;
 
     if (!emailCode || !verifyCode(email_secret, emailCode)) {
       return new Response(JSON.stringify({ 
@@ -86,31 +88,46 @@ export async function POST({ request }) {
     const email = emailCode.slice(0, emailCode.indexOf(':'));
 
     let payment;
+    let product_type;
 
-    (async () => {
-      payment = await payment_client.payments.retrieve('payment_id');
-    })();
+    try {
+      payment = await payment_client.subscriptions.retrieve(subscriptionId);
+    } catch (error) {
+      console.error('Payment verification error:', error);
+      return new Response(JSON.stringify({
+        error: 'Payment verification failed',
+        message: 'Could not verify payment status'
+      }), {
+        status: 502,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
 
     const client = await pool.connect();
     try {
-      const profileQuery = 'SELECT is_pro, is_business FROM profiles WHERE email = $1';
-      const profileResult = await client.query(profileQuery, [email]);
+      console.log(payment)
+      if (payment && payment.status === 'active') {
+        let updatequery;
+        let updatevalues;
 
-      if (payment && payment.status === 'succeeded') {
-        if (payment.product_cart.product_id === 'pro') {
+        if (payment.product_cart.product_id === 'pdt_iwvoy1rq0nzkldpdy0n6u') {
+          updatequery = 'update profiles set is_pro = true, is_business = false, subscription_id = $2 where email = $1';
+          product_type = 'pro';
         }
-        if (payment.product_cart.product_id === 'business') {
+        if (payment.product_cart.product_id === 'pdt_7nr5zqhcztltx7k21vgp5') {
+          updatequery = 'update profiles set is_pro = false, is_business = true, subscription_id = $2 where email = $1';
+          product_type = 'business';
         }
       }
 
-      let { is_pro: isPro, is_business: isBusiness } = profileResult.rows[0];
-
+      await client.query(updatequery, [email, subscriptionId]);
     } finally {
       client.release();
     }
     
     return new Response(JSON.stringify({ 
-      message: 'Profile data updated successfully'
+      message: 'Profile data updated successfully',
+      product_type: product_type || '',
     }), {
       status: 200,
       headers: { 
@@ -121,12 +138,10 @@ export async function POST({ request }) {
     });
 
   } catch (error) {
-    console.error('Registration error:', error);
+    console.error(error);
     
     return new Response(JSON.stringify({ 
-      error: 'Registration failed',
       message: error.message,
-      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
     }), {
       status: 500,
       headers: { 
