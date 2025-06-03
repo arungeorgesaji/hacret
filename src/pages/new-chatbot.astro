@@ -10,18 +10,37 @@ import '../styles/new-chatbot.css';
       <a href="/chatbots" class="btn-outline">Back to Chatbots</a>
     </div>
 
+    <div class="form-section">
+      <h2>Chatbot Basics</h2>
+      <div class="form-group">
+        <label for="chatbot-name">Chatbot Name*</label>
+        <input 
+          type="text" 
+          id="chatbot-name" 
+          placeholder="e.g. Customer Support Bot" 
+          required
+        />
+      </div>
+    </div>
+
     <form class="chatbot-form" id="chatbot-creation-form">
       <div class="form-section">
-        <h2>Chatbot Basics</h2>
-        <div class="form-group">
-          <label for="chatbot-name">Chatbot Name*</label>
-          <input 
-            type="text" 
-            id="chatbot-name" 
-            placeholder="e.g. Customer Support Bot" 
-            required
-          />
+        <h2>Slots</h2>
+        <p class="form-hint">Define collectable slots (e.g., "user_name", "email")</p>
+
+        <div id="slots-container">
+          <div class="slot-entry" data-id="1">
+            <div class="form-group">
+              <div class="slot-input-wrapper">
+                <label>Slot Name*</label>
+                <input type="text" name="slot-1" placeholder="e.g. user_name" required />
+              </div>
+              <button type="button" class="btn-remove-slot">Remove</button>
+            </div>
+          </div>
         </div>
+
+        <button type="button" id="add-slot-btn" class="btn-outline">+ Add Slot</button>
       </div>
 
       <div class="form-section">
@@ -82,9 +101,42 @@ import '../styles/new-chatbot.css';
   </main>
 
   <script>
+    let slotCount = 1;
     let qaCount = 1;
-    
+
+    function attachSlotRemoveListener(slotElement) {
+      const removeBtn = slotElement.querySelector('.btn-remove-slot');
+      if (removeBtn) {
+        removeBtn.addEventListener('click', () => {
+          slotElement.remove();
+        });
+      }
+    }
+
     document.addEventListener('DOMContentLoaded', () => {
+      const initialSlot = document.querySelector('.slot-entry[data-id="1"]');
+      if (initialSlot) {
+        attachSlotRemoveListener(initialSlot);
+      }
+
+      document.getElementById('add-slot-btn').addEventListener('click', () => {
+        slotCount++;
+        const newSlot = document.createElement('div');
+        newSlot.className = 'slot-entry';
+        newSlot.dataset.id = slotCount;
+        newSlot.innerHTML = `
+          <div class="form-group">
+            <div class="slot-input-wrapper">
+              <label>Slot Name*</label>
+              <input type="text" name="slot-${slotCount}" placeholder="e.g. email" required />
+            </div>
+            <button type="button" class="btn-remove-slot">Remove</button>
+          </div>
+        `;
+        document.getElementById('slots-container').appendChild(newSlot);
+        attachSlotRemoveListener(newSlot);
+      });
+
       document.getElementById('add-qa-btn').addEventListener('click', () => {
         qaCount++;
         const newPair = document.createElement('div');
@@ -134,7 +186,10 @@ import '../styles/new-chatbot.css';
         newPair.querySelector('.btn-remove').addEventListener('click', () => removeQaPair(qaCount));
       });
       
-      document.querySelector('.qa-pair .btn-remove').addEventListener('click', () => removeQaPair(1));
+      const initialQaRemove = document.querySelector('.qa-pair .btn-remove');
+      if (initialQaRemove) {
+        initialQaRemove.addEventListener('click', () => removeQaPair(1));
+      }
     });
     
     function removeQaPair(id) {
@@ -168,9 +223,17 @@ import '../styles/new-chatbot.css';
       
       const chatbotData = {
         name: document.getElementById('chatbot-name').value,
+        slots: [],
         qaPairs: []
       };
-      
+
+      document.querySelectorAll('#slots-container .slot-entry').forEach(slot => {
+        const input = slot.querySelector('input');
+        if (input && input.value.trim()) {
+          chatbotData.slots.push(input.value.trim());
+        }
+      });
+
       document.querySelectorAll('.qa-pair').forEach(pair => {
         const id = pair.dataset.id;
         chatbotData.qaPairs.push({
@@ -183,5 +246,5 @@ import '../styles/new-chatbot.css';
       console.log('Chatbot data to submit:', chatbotData);
       alert('Chatbot created successfully! (Check console for data structure)');
     });
-  </script>
-</Layout>
+    </script>
+  </Layout>
