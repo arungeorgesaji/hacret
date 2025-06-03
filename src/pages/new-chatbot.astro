@@ -1,0 +1,187 @@
+---
+import Layout from '../layouts/Layout.astro';
+import '../styles/new-chatbot.css';
+---
+
+<Layout title="Create New Chatbot | SmartFlowchatbots">
+  <main class="new-chatbot-container">
+    <div class="chatbots-header">
+      <h1>Create New Chatbot</h1>
+      <a href="/chatbots" class="btn-outline">Back to Chatbots</a>
+    </div>
+
+    <form class="chatbot-form" id="chatbot-creation-form">
+      <div class="form-section">
+        <h2>Chatbot Basics</h2>
+        <div class="form-group">
+          <label for="chatbot-name">Chatbot Name*</label>
+          <input 
+            type="text" 
+            id="chatbot-name" 
+            placeholder="e.g. Customer Support Bot" 
+            required
+          />
+        </div>
+      </div>
+
+      <div class="form-section">
+        <h2>Questions & Answers</h2>
+        <p class="form-hint">Add questions users might ask and your bot's responses</p>
+        
+        <div id="qa-container">
+          <div class="qa-pair" data-id="1">
+            <div class="qa-header">
+              <h3>Q&A #1</h3>
+              <button type="button" class="btn-remove">
+                Remove
+              </button>
+            </div>
+            
+            <div class="form-group">
+              <label>Intent Name*</label>
+              <input 
+                type="text" 
+                name="intent-1"
+                placeholder="greeting" 
+                required
+              />
+              <p class="form-hint">Simple identifier for this question type</p>
+            </div>
+            
+            <div class="form-group">
+              <label>User Questions* (one per line)</label>
+              <textarea 
+                name="questions-1"
+                rows="3"
+                placeholder="Hi\nHello\nHey there"
+                required
+              ></textarea>
+            </div>
+            
+            <div class="form-group">
+              <label>Bot Answer*</label>
+              <textarea 
+                name="answer-1"
+                rows="2"
+                placeholder="Hello! How can I help you today?"
+                required
+              ></textarea>
+            </div>
+          </div>
+        </div>
+        
+        <button type="button" id="add-qa-btn" class="btn-outline">
+          + Add New Q&A Pair
+        </button>
+      </div>
+
+      <div class="form-actions">
+        <button type="submit" class="btn-primary">Create Chatbot</button>
+      </div>
+    </form>
+  </main>
+
+  <script>
+    let qaCount = 1;
+    
+    document.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('add-qa-btn').addEventListener('click', () => {
+        qaCount++;
+        const newPair = document.createElement('div');
+        newPair.className = 'qa-pair';
+        newPair.dataset.id = qaCount;
+        newPair.innerHTML = `
+          <div class="qa-header">
+            <h3>Q&A #${qaCount}</h3>
+            <button type="button" class="btn-remove">
+              Remove
+            </button>
+          </div>
+          
+          <div class="form-group">
+            <label>Intent Name*</label>
+            <input 
+              type="text" 
+              name="intent-${qaCount}"
+              placeholder="greeting" 
+              required
+            />
+            <p class="form-hint">Simple identifier for this question type</p>
+          </div>
+          
+          <div class="form-group">
+            <label>User Questions* (one per line)</label>
+            <textarea 
+              name="questions-${qaCount}"
+              rows="3"
+              placeholder="Hi\nHello\nHey there"
+              required
+            ></textarea>
+          </div>
+          
+          <div class="form-group">
+            <label>Bot Answer*</label>
+            <textarea 
+              name="answer-${qaCount}"
+              rows="2"
+              placeholder="Hello! How can I help you today?"
+              required
+            ></textarea>
+          </div>
+        `;
+        document.getElementById('qa-container').appendChild(newPair);
+        
+        newPair.querySelector('.btn-remove').addEventListener('click', () => removeQaPair(qaCount));
+      });
+      
+      document.querySelector('.qa-pair .btn-remove').addEventListener('click', () => removeQaPair(1));
+    });
+    
+    function removeQaPair(id) {
+      const pair = document.querySelector(`.qa-pair[data-id="${id}"]`);
+      if (pair) {
+        pair.remove();
+        
+        const pairs = document.querySelectorAll('.qa-pair');
+        pairs.forEach((pair, index) => {
+          const newId = index + 1;
+          pair.dataset.id = newId;
+          pair.querySelector('h3').textContent = `Q&A #${newId}`;
+          
+          pair.querySelectorAll('[name^="intent-"]').forEach(input => {
+            input.name = `intent-${newId}`;
+          });
+          pair.querySelectorAll('[name^="questions-"]').forEach(input => {
+            input.name = `questions-${newId}`;
+          });
+          pair.querySelectorAll('[name^="answer-"]').forEach(input => {
+            input.name = `answer-${newId}`;
+          });
+        });
+        
+        qaCount = pairs.length;
+      }
+    }
+    
+    document.getElementById('chatbot-creation-form').addEventListener('submit', (e) => {
+      e.preventDefault();
+      
+      const chatbotData = {
+        name: document.getElementById('chatbot-name').value,
+        qaPairs: []
+      };
+      
+      document.querySelectorAll('.qa-pair').forEach(pair => {
+        const id = pair.dataset.id;
+        chatbotData.qaPairs.push({
+          intent: pair.querySelector(`[name="intent-${id}"]`).value,
+          questions: pair.querySelector(`[name="questions-${id}"]`).value.split('\n').filter(q => q.trim()),
+          answer: pair.querySelector(`[name="answer-${id}"]`).value
+        });
+      });
+      
+      console.log('Chatbot data to submit:', chatbotData);
+      alert('Chatbot created successfully! (Check console for data structure)');
+    });
+  </script>
+</Layout>

@@ -9,7 +9,12 @@ import defaultMemberLogo from '../assets/default-team.png';
   <main class="billing-container">
     <section class="profile-section">
       <div class="profile-header">
-        <h1>Billing</h1>
+        <div class="header-actions">
+          <h1>Billing</h1>
+          <button class="btn btn-outline" onclick="window.location.href='/chatbots'">
+            ← Return to Chatbots
+          </button>
+        </div>
         <p class="subtitle">Manage your subscription plan</p>
       </div>
       <div class="billing-content">
@@ -29,19 +34,32 @@ import defaultMemberLogo from '../assets/default-team.png';
   <div id="cancelModal" class="modal">
     <div class="modal-content">
       <span class="close">&times;</span>
-      <h3>Cancel Subscription</h3>
-      <p>We're sorry to see you go! If you cancel your subscription:</p>
-      <ul>
-        <li>You'll lose access to Pro or Business features immediately</li>
-        <li>Your account will revert to the Free plan</li>
-        <li>Any data beyond Free plan limits may be archived</li>
-      </ul>
-      <p>Would you like to continue with cancellation?</p>
-      <div class="modal-actions">
-        <button class="btn btn-outline" id="cancelModalClose">No, Keep My Plan</button>
-        <button class="btn btn-danger" id="confirmCancel">Yes, Cancel Subscription</button>
+      
+      <div id="cancellationContent">
+        <h3>Cancel Subscription</h3>
+        <p>We're sorry to see you go! If you cancel your subscription:</p>
+        <ul>
+          <li>You'll lose access to Pro or Business features immediately</li>
+          <li>Your account will revert to the Free plan</li>
+          <li>Any data beyond Free plan limits may be archived</li>
+        </ul>
+        <p>Would you like to continue with cancellation?</p>
+        <div class="modal-actions">
+          <button class="btn btn-outline" id="cancelModalClose">No, Keep My Plan</button>
+          <button class="btn btn-danger" id="confirmCancel">Yes, Cancel Subscription</button>
+        </div>
+      </div>
+      
+      <div id="cancellationConfirmation" style="display: none;">
+        <h3>Cancellation Request Received</h3>
+        <p>To complete your cancellation, please contact our support team:</p>
+        <div class="modal-actions">
+          <a href="/contact" class="btn btn-primary">Contact Support Now</a>
+          <button class="btn btn-outline" id="returnToBilling" onclick="location.href = '/billing'">Return to Billing</button>
+        </div>
       </div>
     </div>
+  </div>
   </div>
 </Layout>
 
@@ -114,6 +132,9 @@ import defaultMemberLogo from '../assets/default-team.png';
           } else {
             throw new Error(result.message || result.error || 'Failed to update your plan');
           }
+
+          sessionStorage.setItem('isProUser', isProUser);
+          sessionStorage.setItem('isBusinessUser', isBusinessUser);
           
           renderPlan();
 
@@ -168,15 +189,6 @@ import defaultMemberLogo from '../assets/default-team.png';
           <button class="btn btn-primary" id="upgradeToBusiness">Upgrade to Business</button>
           <button class="btn btn-danger" id="cancelSubscriptionBtn">Cancel Subscription</button>
         `;
-
-        document.addEventListener('click', (e) => {
-          if (e.target && e.target.id === 'upgradeToBusiness') {
-            const redirectURL = `${window.location.origin}/billing`;
-            const encodedRedirect = encodeURIComponent(redirectURL);
-            const paymentURL = `https://test.checkout.dodopayments.com/buy/pdt_7NR5zqHCZtltX7k21VGP5?quantity=1&redirect_url=${encodedRedirect}`;
-            window.location.href = paymentURL;
-          }
-        });
       } else {
         planDetails.innerHTML = `
           <div class="plan-name">
@@ -191,23 +203,34 @@ import defaultMemberLogo from '../assets/default-team.png';
           <p class="renewal-date">Upgrade to unlock all features</p>
         `;
         planActions.innerHTML = `
-          <button class="btn btn-primary" id="upgradeToPro">Upgrade to Pro</button>
+          <div class="upgrade-options">
+            <button class="btn btn-primary" id="upgradeToPro">Upgrade to Pro ($19/month)</button>
+            <button class="btn btn-primary" id="upgradeToBusiness">Upgrade to Business ($99/month)</button>
+          </div>
         `;
+      }
 
-        document.addEventListener('click', (e) => {
+      document.addEventListener('click', (e) => {
+          const redirectURL = `${window.location.origin}/billing`;
+          const encodedRedirect = encodeURIComponent(redirectURL);
+          
           if (e.target && e.target.id === 'upgradeToPro') {
-            const redirectURL = `${window.location.origin}/billing`;
-            const encodedRedirect = encodeURIComponent(redirectURL);
             const paymentURL = `https://test.checkout.dodopayments.com/buy/pdt_IwvOy1RQ0NzKldpDy0n6u?quantity=1&redirect_url=${encodedRedirect}`;
             window.location.href = paymentURL;
           }
-        });
-      }
-      
-      const btn = document.getElementById("cancelSubscriptionBtn");
-      if (btn) {
-        btn.onclick = function() {
+          
+          if (e.target && e.target.id === 'upgradeToBusiness') {
+            const paymentURL = `https://test.checkout.dodopayments.com/buy/pdt_7NR5zqHCZtltX7k21VGP5?quantity=1&redirect_url=${encodedRedirect}`;
+            window.location.href = paymentURL;
+          }
+      });
+
+      const cancelBtn = document.getElementById("cancelSubscriptionBtn");
+      if (cancelBtn) {
+        cancelBtn.onclick = function() {
           document.getElementById("cancelModal").style.display = "block";
+          document.getElementById("cancellationContent").style.display = "block";
+          document.getElementById("cancellationConfirmation").style.display = "none";
         }
       }
     }
@@ -283,9 +306,8 @@ import defaultMemberLogo from '../assets/default-team.png';
 
     if (confirmCancel) {
       confirmCancel.onclick = function() {
-        localStorage.setItem('userPlan', 'free');
-        modal.style.display = "none";
-        window.location.reload();
+         document.getElementById("cancellationContent").style.display = "none";
+          document.getElementById("cancellationConfirmation").style.display = "block";
       }
     }
 

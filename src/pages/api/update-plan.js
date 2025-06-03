@@ -1,5 +1,4 @@
 export const prerender = false;
-import DodoPayments from 'dodopayments';
 import { Pool } from 'pg';
 import { generateSecretKeyHash, generateCode, decryptCode, verifyCode } from "../../lib/generateCodes.js";
 
@@ -15,11 +14,7 @@ const pool = new Pool({
 });
 
 const email_secret = generateSecretKeyHash(import.meta.env.EMAIL_SECRET);
-const dodopayment_api_key=import.meta.env.DODOPAYMENT_API_KEY;
-
-const payment_client = new DodoPayments({
-  bearerToken: dodopayment_api_key, 
-});
+const dodopayment_api_key = import.meta.env.DODOPAYMENT_API_KEY;
 
 export async function POST({ request }) {
   const origin = request.headers.get('origin');
@@ -91,9 +86,20 @@ export async function POST({ request }) {
     let product_type;
 
     try {
-      payment = await payment_client.subscriptions.retrieve(subscriptionId);
+      const apiUrl = `https://test.dodopayments.com/subscriptions/${subscriptionId}`;
+      const response = await fetch(apiUrl, {
+        headers: {
+          'Authorization': `Bearer ${dodopayment_api_key}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch payment data: ${response.statusText}`);
+      }
+
+      payment = await response.json();
     } catch (error) {
-      console.error('Payment verification error:', error);
       return new Response(JSON.stringify({
         error: 'Payment verification failed',
         message: 'Could not verify payment status'
@@ -105,16 +111,15 @@ export async function POST({ request }) {
 
     const client = await pool.connect();
     try {
-      console.log(payment)
-      if (payment && payment.status === 'active') {
-        let updatequery;
-        let updatevalues;
+      let updatequery;
+      let updatevalues;
 
-        if (payment.product_cart.product_id === 'pdt_iwvoy1rq0nzkldpdy0n6u') {
+      if (payment && payment.status === 'active') {
+        if (payment.product_id == 'pdt_IwvOy1RQ0NzKldpDy0n6u') {
           updatequery = 'update profiles set is_pro = true, is_business = false, subscription_id = $2 where email = $1';
           product_type = 'pro';
         }
-        if (payment.product_cart.product_id === 'pdt_7nr5zqhcztltx7k21vgp5') {
+        if (payment.product_id == 'pdt_7NR5zqHCZtltX7k21VGP5') {
           updatequery = 'update profiles set is_pro = false, is_business = true, subscription_id = $2 where email = $1';
           product_type = 'business';
         }
