@@ -109,7 +109,8 @@ textarea {
   margin-top: 0.5rem;
 }
 
-.qa-pair {
+.intent-entry,
+.utterance-entry {
   background: var(--card-gradient);
   border-radius: 12px;
   padding: 1.5rem;
@@ -118,28 +119,32 @@ textarea {
   transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
-.qa-pair:hover {
+.intent-entry:hover,
+.utterance-entry:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
 }
 
-.qa-header {
+.intent-header,
+.utterance-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 1.25rem;
 }
 
-.qa-header h3 {
+.intent-header h3,
+.utterance-header h3 {
   margin: 0;
   font-size: 1.2rem;
   color: var(--white);
 }
 
-.btn-remove, .btn-remove-slot {
+.btn-remove, 
+.btn-remove-slot {
   color: #ef4444;
   background: rgba(239, 68, 68, 0.1);
-  border: none;
+  border: 1px solid rgba(239, 68, 68, 0.3);
   cursor: pointer;
   padding: 0.5rem 1rem;
   font-size: 0.875rem;
@@ -149,10 +154,19 @@ textarea {
   align-items: center;
   gap: 0.5rem;
   white-space: nowrap;
+  height: fit-content;
 }
 
-.btn-remove:hover, .btn-remove-slot:hover {
+.btn-remove:hover, 
+.btn-remove-slot:hover {
   background: rgba(239, 68, 68, 0.2);
+  transform: translateY(-1px);
+}
+
+.btn-remove svg,
+.btn-remove-slot svg {
+  width: 16px;
+  height: 16px;
 }
 
 .form-actions {
@@ -178,6 +192,7 @@ textarea {
 
 .btn-outline:hover {
   background: rgba(99, 102, 241, 0.1);
+  transform: translateY(-1px);
 }
 
 .btn-primary {
@@ -225,4 +240,59 @@ textarea {
     align-self: flex-start;
     margin-top: 0.5rem;
   }
+
+  .intent-header,
+  .utterance-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .btn-remove {
+    align-self: flex-end;
+  }
+}
+
+.slot-mapping {
+    background: #f1f5f9;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    padding: 1rem;
+    margin-top: 1rem;
+}
+
+.slot-mapping h4 {
+    color: #475569;
+    margin-bottom: 0.5rem;
+    font-size: 0.95rem;
+}
+
+.slot-mapping-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 0.5rem;
+    padding: 0.5rem;
+    background: white;
+    border-radius: 4px;
+}
+
+.placeholder-text {
+    font-family: monospace;
+    background: #fef3c7;
+    padding: 0.25rem 0.5rem;
+    border-radius: 3px;
+    font-size: 0.875rem;
+}
+
+.highlight-placeholder {
+    background-color: #fef3c7;
+    padding: 2px 4px;
+    border-radius: 3px;
+    font-weight: 500;
+}
+
+.slot-mapping select {
+    width: auto;
+    min-width: 150px;
 }

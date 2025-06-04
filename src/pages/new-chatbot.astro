@@ -44,13 +44,13 @@ import '../styles/new-chatbot.css';
       </div>
 
       <div class="form-section">
-        <h2>Questions & Answers</h2>
-        <p class="form-hint">Add questions users might ask and your bot's responses</p>
+        <h2>Intents</h2>
+        <p class="form-hint">Define user intents and example phrases</p>
         
-        <div id="qa-container">
-          <div class="qa-pair" data-id="1">
-            <div class="qa-header">
-              <h3>Q&A #1</h3>
+        <div id="intents-container">
+          <div class="intent-entry" data-id="1">
+            <div class="intent-header">
+              <h3>Intent #1</h3>
               <button type="button" class="btn-remove">
                 Remove
               </button>
@@ -60,27 +60,60 @@ import '../styles/new-chatbot.css';
               <label>Intent Name*</label>
               <input 
                 type="text" 
-                name="intent-1"
+                name="intent-name-1"
                 placeholder="greeting" 
                 required
               />
-              <p class="form-hint">Simple identifier for this question type</p>
+              <p class="form-hint">Simple identifier for this intent</p>
             </div>
             
             <div class="form-group">
-              <label>User Questions* (one per line)</label>
+              <label>Example Phrases* (one per line)</label>
               <textarea 
-                name="questions-1"
+                name="intent-examples-1"
                 rows="3"
-                placeholder="Hi\nHello\nHey there"
+                placeholder="Hi\nHello\nMy name is {user_name}"
                 required
               ></textarea>
             </div>
+
+            <div class="slot-mappings" id="slot-mappings-1"></div>
+          </div>
+        </div>
+        
+        <button type="button" id="add-intent-btn" class="btn-outline">
+          + Add New Intent
+        </button>
+      </div>
+
+      <div class="form-section">
+        <h2>Responses</h2>
+        <p class="form-hint">Define bot responses to intents</p>
+        
+        <div id="utterances-container">
+          <div class="utterance-entry" data-id="1">
+            <div class="utterance-header">
+              <h3>Response #1</h3>
+              <button type="button" class="btn-remove">
+                Remove
+              </button>
+            </div>
             
             <div class="form-group">
-              <label>Bot Answer*</label>
+              <label>Response Name*</label>
+              <input 
+                type="text" 
+                name="utterance-name-1"
+                placeholder="greet" 
+                required
+              />
+              <p class="form-hint">Simple identifier for response</p>
+            </div>
+            
+            <div class="form-group">
+              <label>Response Text*</label>
               <textarea 
-                name="answer-1"
+                name="utterance-text-1"
                 rows="2"
                 placeholder="Hello! How can I help you today?"
                 required
@@ -89,8 +122,8 @@ import '../styles/new-chatbot.css';
           </div>
         </div>
         
-        <button type="button" id="add-qa-btn" class="btn-outline">
-          + Add New Q&A Pair
+        <button type="button" id="add-utterance-btn" class="btn-outline">
+          + Add New Response
         </button>
       </div>
 
@@ -102,14 +135,149 @@ import '../styles/new-chatbot.css';
 
   <script>
     let slotCount = 1;
-    let qaCount = 1;
+    let intentCount = 1;
+    let utteranceCount = 1;
 
     function attachSlotRemoveListener(slotElement) {
       const removeBtn = slotElement.querySelector('.btn-remove-slot');
       if (removeBtn) {
         removeBtn.addEventListener('click', () => {
           slotElement.remove();
+          updateAllSlotMappings();
         });
+      }
+    }
+
+    function getAvailableSlots() {
+        const slots = [];
+        document.querySelectorAll('#slots-container input[name^="slot-"]').forEach(input => {
+            if (input.value.trim()) {
+                slots.push(input.value.trim());
+            }
+        });
+        return slots;
+    }
+
+    function extractPlaceholders(text) {
+        const regex = /{([^}]+)}/g;
+        const placeholders = [];
+        let match;
+        while ((match = regex.exec(text)) !== null) {
+            if (!placeholders.includes(match[1])) {
+                placeholders.push(match[1]);
+            }
+        }
+        return placeholders;
+    }
+
+    function updateSlotMappings(intentId) {
+        const textarea = document.querySelector(`[name="intent-examples-${intentId}"]`);
+        const mappingsContainer = document.getElementById(`slot-mappings-${intentId}`);
+        
+        if (!textarea || !mappingsContainer) return;
+
+        const text = textarea.value;
+        const placeholders = extractPlaceholders(text);
+        const availableSlots = getAvailableSlots();
+
+        if (placeholders.length === 0) {
+            mappingsContainer.innerHTML = '';
+            return;
+        }
+
+        let mappingsHTML = `
+            <div class="slot-mapping">
+                <h4>Slot Mappings</h4>
+                <p class="form-hint">Map placeholders to your defined slots:</p>
+        `;
+
+        placeholders.forEach(placeholder => {
+            mappingsHTML += `
+                <div class="slot-mapping-item">
+                    <span class="placeholder-text">{${placeholder}}</span>
+                    <span>→</span>
+                    <select name="slot-mapping-${intentId}-${placeholder}">
+                        <option value="">Select slot...</option>
+                        ${availableSlots.map(slot => `
+                            <option value="${slot}" ${slot === placeholder ? 'selected' : ''}>
+                                ${slot}
+                            </option>
+                        `).join('')}
+                    </select>
+                </div>
+            `;
+        });
+
+        mappingsHTML += '</div>';
+        mappingsContainer.innerHTML = mappingsHTML;
+    }
+
+    function updateAllSlotMappings() {
+        document.querySelectorAll('.intent-entry').forEach(intent => {
+            const id = intent.dataset.id;
+            updateSlotMappings(id);
+        });
+    }
+
+    function attachIntentListeners(intentElement) {
+        const id = intentElement.dataset.id;
+        const textarea = intentElement.querySelector(`[name="intent-examples-${id}"]`);
+        
+        if (textarea) {
+            textarea.addEventListener('input', () => {
+                updateSlotMappings(id); 
+            });
+        }
+    }
+
+    function removeIntent(id) {
+      const intent = document.querySelector(`.intent-entry[data-id="${id}"]`);
+      if (intent) {
+        intent.remove();
+        
+        const intents = document.querySelectorAll('.intent-entry');
+        intents.forEach((intent, index) => {
+          const newId = index + 1;
+          intent.dataset.id = newId;
+          intent.querySelector('h3').textContent = `Intent #${newId}`;
+          
+          intent.querySelectorAll('[name^="intent-name-"]').forEach(input => {
+            input.name = `intent-name-${newId}`;
+          });
+          intent.querySelectorAll('[name^="intent-examples-"]').forEach(input => {
+            input.name = `intent-examples-${newId}`;
+          });
+          
+          const mappingsContainer = intent.querySelector('.slot-mappings');
+          if (mappingsContainer) {
+            mappingsContainer.id = `slot-mappings-${newId}`;
+          }
+        });
+        
+        intentCount = intents.length;
+      }
+    }
+
+    function removeUtterance(id) {
+      const utterance = document.querySelector(`.utterance-entry[data-id="${id}"]`);
+      if (utterance) {
+        utterance.remove();
+        
+        const utterances = document.querySelectorAll('.utterance-entry');
+        utterances.forEach((utterance, index) => {
+          const newId = index + 1;
+          utterance.dataset.id = newId;
+          utterance.querySelector('h3').textContent = `Response #${newId}`;
+          
+          utterance.querySelectorAll('[name^="utterance-name-"]').forEach(input => {
+            input.name = `utterance-name-${newId}`;
+          });
+          utterance.querySelectorAll('[name^="utterance-text-"]').forEach(input => {
+            input.name = `utterance-text-${newId}`;
+          });
+        });
+        
+        utteranceCount = utterances.length;
       }
     }
 
@@ -117,6 +285,24 @@ import '../styles/new-chatbot.css';
       const initialSlot = document.querySelector('.slot-entry[data-id="1"]');
       if (initialSlot) {
         attachSlotRemoveListener(initialSlot);
+        const slotInput = initialSlot.querySelector('input');
+        if (slotInput) {
+          slotInput.addEventListener('input', updateAllSlotMappings);
+        }
+      }
+
+      const initialIntent = document.querySelector('.intent-entry[data-id="1"]');
+      if (initialIntent) {
+        attachIntentListeners(initialIntent);
+        const initialIntentRemove = initialIntent.querySelector('.btn-remove');
+        if (initialIntentRemove) {
+          initialIntentRemove.addEventListener('click', () => removeIntent(1));
+        }
+      }
+
+      const initialUtteranceRemove = document.querySelector('.utterance-entry .btn-remove');
+      if (initialUtteranceRemove) {
+        initialUtteranceRemove.addEventListener('click', () => removeUtterance(1));
       }
 
       document.getElementById('add-slot-btn').addEventListener('click', () => {
@@ -135,16 +321,21 @@ import '../styles/new-chatbot.css';
         `;
         document.getElementById('slots-container').appendChild(newSlot);
         attachSlotRemoveListener(newSlot);
+
+        const slotInput = newSlot.querySelector('input');
+        if (slotInput) {
+          slotInput.addEventListener('input', updateAllSlotMappings);
+        }
       });
 
-      document.getElementById('add-qa-btn').addEventListener('click', () => {
-        qaCount++;
-        const newPair = document.createElement('div');
-        newPair.className = 'qa-pair';
-        newPair.dataset.id = qaCount;
-        newPair.innerHTML = `
-          <div class="qa-header">
-            <h3>Q&A #${qaCount}</h3>
+      document.getElementById('add-intent-btn').addEventListener('click', () => {
+        intentCount++;
+        const newIntent = document.createElement('div');
+        newIntent.className = 'intent-entry';
+        newIntent.dataset.id = intentCount;
+        newIntent.innerHTML = `
+          <div class="intent-header">
+            <h3>Intent #${intentCount}</h3>
             <button type="button" class="btn-remove">
               Remove
             </button>
@@ -154,69 +345,69 @@ import '../styles/new-chatbot.css';
             <label>Intent Name*</label>
             <input 
               type="text" 
-              name="intent-${qaCount}"
+              name="intent-name-${intentCount}"
               placeholder="greeting" 
               required
             />
-            <p class="form-hint">Simple identifier for this question type</p>
+            <p class="form-hint">Simple identifier for this intent</p>
           </div>
           
           <div class="form-group">
-            <label>User Questions* (one per line)</label>
+            <label>Example Phrases* (one per line)</label>
             <textarea 
-              name="questions-${qaCount}"
+              name="intent-examples-${intentCount}"
               rows="3"
               placeholder="Hi\nHello\nHey there"
               required
             ></textarea>
           </div>
+
+          <div class="slot-mappings" id="slot-mappings-${intentCount}"></div>
+        `;
+        document.getElementById('intents-container').appendChild(newIntent);
+        
+        attachIntentListeners(newIntent);
+        newIntent.querySelector('.btn-remove').addEventListener('click', () => removeIntent(intentCount));
+      });
+
+      document.getElementById('add-utterance-btn').addEventListener('click', () => {
+        utteranceCount++;
+        const newUtterance = document.createElement('div');
+        newUtterance.className = 'utterance-entry';
+        newUtterance.dataset.id = utteranceCount;
+        newUtterance.innerHTML = `
+          <div class="utterance-header">
+            <h3>Response #${utteranceCount}</h3>
+            <button type="button" class="btn-remove">
+              Remove
+            </button>
+          </div>
           
           <div class="form-group">
-            <label>Bot Answer*</label>
+            <label>Response Name*</label>
+            <input 
+              type="text" 
+              name="utterance-name-${utteranceCount}"
+              placeholder="greet" 
+              required
+            />
+            <p class="form-hint">Simple identifier for this response</p>
+          </div>
+          
+          <div class="form-group">
+            <label>Response Text*</label>
             <textarea 
-              name="answer-${qaCount}"
+              name="utterance-text-${utteranceCount}"
               rows="2"
               placeholder="Hello! How can I help you today?"
               required
             ></textarea>
           </div>
         `;
-        document.getElementById('qa-container').appendChild(newPair);
-        
-        newPair.querySelector('.btn-remove').addEventListener('click', () => removeQaPair(qaCount));
+        document.getElementById('utterances-container').appendChild(newUtterance);
+        newUtterance.querySelector('.btn-remove').addEventListener('click', () => removeUtterance(utteranceCount));
       });
-      
-      const initialQaRemove = document.querySelector('.qa-pair .btn-remove');
-      if (initialQaRemove) {
-        initialQaRemove.addEventListener('click', () => removeQaPair(1));
-      }
     });
-    
-    function removeQaPair(id) {
-      const pair = document.querySelector(`.qa-pair[data-id="${id}"]`);
-      if (pair) {
-        pair.remove();
-        
-        const pairs = document.querySelectorAll('.qa-pair');
-        pairs.forEach((pair, index) => {
-          const newId = index + 1;
-          pair.dataset.id = newId;
-          pair.querySelector('h3').textContent = `Q&A #${newId}`;
-          
-          pair.querySelectorAll('[name^="intent-"]').forEach(input => {
-            input.name = `intent-${newId}`;
-          });
-          pair.querySelectorAll('[name^="questions-"]').forEach(input => {
-            input.name = `questions-${newId}`;
-          });
-          pair.querySelectorAll('[name^="answer-"]').forEach(input => {
-            input.name = `answer-${newId}`;
-          });
-        });
-        
-        qaCount = pairs.length;
-      }
-    }
     
     document.getElementById('chatbot-creation-form').addEventListener('submit', (e) => {
       e.preventDefault();
@@ -224,7 +415,8 @@ import '../styles/new-chatbot.css';
       const chatbotData = {
         name: document.getElementById('chatbot-name').value,
         slots: [],
-        qaPairs: []
+        intents: [],
+        utterances: []
       };
 
       document.querySelectorAll('#slots-container .slot-entry').forEach(slot => {
@@ -234,17 +426,34 @@ import '../styles/new-chatbot.css';
         }
       });
 
-      document.querySelectorAll('.qa-pair').forEach(pair => {
-        const id = pair.dataset.id;
-        chatbotData.qaPairs.push({
-          intent: pair.querySelector(`[name="intent-${id}"]`).value,
-          questions: pair.querySelector(`[name="questions-${id}"]`).value.split('\n').filter(q => q.trim()),
-          answer: pair.querySelector(`[name="answer-${id}"]`).value
+      document.querySelectorAll('.intent-entry').forEach(intent => {
+        const id = intent.dataset.id;
+        const intentData = {
+          name: intent.querySelector(`[name="intent-name-${id}"]`).value,
+          examples: intent.querySelector(`[name="intent-examples-${id}"]`).value.split('\n').filter(q => q.trim()),
+          slotMappings: {}
+        };
+
+        intent.querySelectorAll(`[name^="slot-mapping-${id}-"]`).forEach(select => {
+          if (select.value) {
+            const placeholder = select.name.split('-').pop();
+            intentData.slotMappings[placeholder] = select.value;
+          }
+        });
+
+        chatbotData.intents.push(intentData);
+      });
+
+      document.querySelectorAll('.utterance-entry').forEach(utterance => {
+        const id = utterance.dataset.id;
+        chatbotData.utterances.push({
+          name: utterance.querySelector(`[name="utterance-name-${id}"]`).value,
+          text: utterance.querySelector(`[name="utterance-text-${id}"]`).value
         });
       });
       
       console.log('Chatbot data to submit:', chatbotData);
       alert('Chatbot created successfully! (Check console for data structure)');
     });
-    </script>
-  </Layout>
+  </script>
+</Layout>
