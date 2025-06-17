@@ -14,13 +14,18 @@ let currentEmailIndex = 0;
 
 let i = 1;
 while (true) {
-  const address = import.meta.env[`GMAIL_ADDRESS_${i}`];
-  const password = import.meta.env[`GMAIL_PASSWORD_${i}`];
-  if (!address || !password) break;
+  const address = import.meta.env[`MAIL_ADDRESS_${i}`];
+  const password = import.meta.env[`MAIL_PASSWORD_${i}`];
+  const host = import.meta.env[`MAIL_HOST_${i}`];
+  const port = import.meta.env[`MAIL_PORT_${i}`];
+
+  if (!address || !password || !host || !port) break;
   
   emailPool.push({
     address,
     password,
+    host,
+    port: port,
     index: i
   });
   i++;

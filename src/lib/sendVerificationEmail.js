@@ -12,7 +12,8 @@ export async function sendVerificationEmail(emailPool, verification_secret, prod
   for (const account of emailPool) {
     try {
       const transporter = nodemailer.createTransport({
-        service: 'gmail',
+        host: account.host,
+        port: account.port,
         auth: {
           user: account.address,
           pass: account.password
@@ -31,6 +32,7 @@ export async function sendVerificationEmail(emailPool, verification_secret, prod
       
       return { success: true, verificationCode };
     } catch (error) {
+      console.log(`Failed to send email using account ${account.address}:`, error);
       lastError = error;
     }
   }
