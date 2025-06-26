@@ -263,7 +263,20 @@ import '../styles/new-chatbot.css';
     </form>
   </main>
 
-  <script>
+<script>
+    const emailCode = localStorage.getItem('emailCode');
+    const message = document.getElementById('error-message');
+
+    if (!emailCode) {
+      message.textContent = "No email code found. Please log in again.";
+      message.style.color = '#B71C1C';
+
+      setTimeout(() => {
+        window.location.href = '/login';
+      }, 1500);
+      return;
+    }
+
     let slotCount = 1;
     let intentCount = 1;
     let utteranceCount = 1;
@@ -1286,9 +1299,44 @@ document.getElementById('chatbot-creation-form').addEventListener('submit', (e) 
 
         chatbotData.stories.push(storyData);
       });
-      
-      console.log('Complete chatbot data to submit:', chatbotData);
-      alert('Chatbot created successfully! (Check console for complete data structure)');
     });
+
+    try {
+      const response = await fetch('/api/new-chatbot', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ emailCode, chatbotData })
+      });
+      
+      const result = await response.json();
+      
+      if (response.status === 400) {
+        message.textContent = result.message;
+        message.style.color = '#FFC107';
+        return;
+      } else if (response.status === 500) {
+        message.textContent = result.message; 
+        message.style.color = '#F44336';
+        return;
+      }
+      
+      if (!response.ok) {
+        throw new Error(result.message || result.error || 'Signup failed');
+      }
+
+      message.textContent = result.message;
+      message.style.color = '#4CAF50';
+
+      setTimeout(() => {
+        window.location.href = '/chatbots';
+      }, 1500);
+
+    } catch (err) {
+      message.textContent = err.message;
+      message.style.color = '#B71C1C';
+    }
+  });
   </script>
 </Layout>
