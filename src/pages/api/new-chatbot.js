@@ -14,7 +14,7 @@ const pool = new Pool({
 });
 
 const email_secret = generateSecretKeyHash(import.meta.env.EMAIL_SECRET);
-const api_type = import.meta.env.API_TYPE; 
+const api_type = import.meta.env.BUILDER_API_TYPE; 
 
 if (api_type == "test") {
   global api_url = import.meta.env.TEST_API_URL;
@@ -98,6 +98,8 @@ export async function POST({ request }) {
 
     const email = emailCode.slice(0, emailCode.indexOf(':'));
 
+    let apiData;
+
     try {
         const headers = {
           'Content-Type': 'application/json',
@@ -127,7 +129,7 @@ export async function POST({ request }) {
           });
         }
 
-        const apiData = await apiResponse.json();
+        apiData = await apiResponse.json();
         console.log('API response:', apiData);
 
       } catch (apiError) {
@@ -138,6 +140,18 @@ export async function POST({ request }) {
 
     const client = await pool.connect();
     try {
+      const insertQuery = `
+        INSERT INTO chatbots (id, owner_email, chatbot_data, )
+        VALUES ($1, $2, $3)
+        RETURNING id, owner_email, chatbot_data
+      `;
+
+      const insertResult = await client.query(insertQuery, [
+          apiData.id,
+          email,
+          JSON.stringify(apiData.chatbotData)
+      ]);
+
       const profileQuery = 'SELECT profile_data FROM profiles WHERE email = $1';
       const profileResult = await client.query(profileQuery, [email]);
 
