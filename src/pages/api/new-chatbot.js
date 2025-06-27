@@ -15,12 +15,9 @@ const pool = new Pool({
 
 const email_secret = generateSecretKeyHash(import.meta.env.EMAIL_SECRET);
 const api_type = import.meta.env.BUILDER_API_TYPE; 
-
-if (api_type == "test") {
-  global api_url = import.meta.env.TEST_API_URL;
-} else {
-  global api_url = import.meta.env.PRODUCTION_API_URL;
-}
+const api_url = API_TYPE === 'test' 
+  ? import.meta.env.TEST_API_URL 
+  : import.meta.env.PRODUCTION_API_URL;
 
 export async function POST({ request }) {
   const origin = request.headers.get('origin');
@@ -149,27 +146,24 @@ export async function POST({ request }) {
       const insertResult = await client.query(insertQuery, [
           apiData.id,
           email,
-          JSON.stringify(apiData.chatbotData)
+          apiData.chatbotData
       ]);
 
-      const profileQuery = 'SELECT profile_data FROM profiles WHERE email = $1';
+      const profileQuery = 'SELECT active_chatbots FROM profiles WHERE email = $1';
       const profileResult = await client.query(profileQuery, [email]);
 
-      let profileData = profileResult.rows[0].profile_data;
-      profileData.primaryColor = primaryColor;
-      profileData.secondaryColor = secondaryColor;
-      profileData.backgroundColor = backgroundColor;
-      profileData.textColor = textColor;
+      let activeChatbots = profileResult.rows[0].active_chatbots;
+      activeChatbots += 1;
 
-      const updateProfileDataQuery = 'UPDATE profiles SET profile_data = $1 WHERE email = $2';
-      await client.query(updateProfileDataQuery, [profileData, email]);
+      const updateProfileDataQuery = 'UPDATE profiles SET activeChatbots = $1 WHERE email = $2';
+      await client.query(updateProfileDataQuery, [activeChatbots, email]);
 
     } finally {
       client.release();
     }
 
     return new Response(JSON.stringify({ 
-      message: 'Successfully updated graphics information for your biosnap page.',
+      message: 'Successfully made chatbot.',
     }), {
       status: 200,
       headers: { 
