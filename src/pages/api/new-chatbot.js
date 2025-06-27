@@ -16,8 +16,8 @@ const pool = new Pool({
 const email_secret = generateSecretKeyHash(import.meta.env.EMAIL_SECRET);
 const api_type = import.meta.env.BUILDER_API_TYPE; 
 const api_url = API_TYPE === 'test' 
-  ? import.meta.env.TEST_API_URL 
-  : import.meta.env.PRODUCTION_API_URL;
+  ? import.meta.env.TEST_API_URL + '/create' 
+  : import.meta.env.PRODUCTION_API_URL + '/create';
 
 export async function POST({ request }) {
   const origin = request.headers.get('origin');
@@ -111,7 +111,6 @@ export async function POST({ request }) {
           method: 'POST',
           headers: headers, 
           body: JSON.stringify({
-            email: email,
             chatbotData: chatbotData
           })
         });

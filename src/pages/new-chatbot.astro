@@ -153,7 +153,7 @@ import '../styles/new-chatbot.css';
                 <option value="form">Form Activation</option>
               </select>
             </div>
-            
+
             <div class="form-group mapping-value-container" id="mapping-value-1"></div>
           </div>
         </div>
@@ -262,21 +262,9 @@ import '../styles/new-chatbot.css';
       </div>
     </form>
   </main>
+</Layout>
 
 <script>
-    const emailCode = localStorage.getItem('emailCode');
-    const message = document.getElementById('error-message');
-
-    if (!emailCode) {
-      message.textContent = "No email code found. Please log in again.";
-      message.style.color = '#B71C1C';
-
-      setTimeout(() => {
-        window.location.href = '/login';
-      }, 1500);
-      return;
-    }
-
     let slotCount = 1;
     let intentCount = 1;
     let utteranceCount = 1;
@@ -593,6 +581,19 @@ import '../styles/new-chatbot.css';
     }
 
     document.addEventListener('DOMContentLoaded', () => {
+      const emailCode = localStorage.getItem('emailCode');
+      const message = document.getElementById('error-message');
+
+      if (!emailCode) {
+        message.textContent = "No email code found. Please log in again.";
+        message.style.color = '#B71C1C';
+
+        setTimeout(() => {
+          window.location.href = '/login';
+        }, 1500);
+        return;
+      }
+
       const initialSlot = document.querySelector('.slot-entry[data-id="1"]');
       if (initialSlot) {
         attachSlotRemoveListener(initialSlot);
@@ -840,14 +841,6 @@ import '../styles/new-chatbot.css';
         updateAllDropdowns();
       });
 
-// Update the form submission handler to collect the new mapping data
-document.getElementById('chatbot-creation-form').addEventListener('submit', (e) => {
-  e.preventDefault();
-  
-  const chatbotData = {
-    mappings: []
-  };
-
   document.querySelectorAll('.mapping-entry').forEach(mapping => {
     const id = mapping.dataset.id;
     const intentSelect = mapping.querySelector(`[name="mapping-intent-${id}"]`);
@@ -875,289 +868,266 @@ document.getElementById('chatbot-creation-form').addEventListener('submit', (e) 
     }
   });
   
-  console.log('Complete chatbot data to submit:', chatbotData);
-  alert('Chatbot created successfully! (Check console for complete data structure)');
-});
-
-
-      document.getElementById('add-form-btn').addEventListener('click', () => {
-        formCount++;
-        const newForm = document.createElement('div');
-        newForm.className = 'form-definition-entry';
-        newForm.dataset.id = formCount;
-        newForm.innerHTML = `
-          <div class="form-definition-header">
-            <h3>Form #${formCount}</h3>
-            <button type="button" class="btn-remove-form">Remove</button>
+  document.getElementById('add-form-btn').addEventListener('click', () => {
+    formCount++;
+    const newForm = document.createElement('div');
+    newForm.className = 'form-definition-entry';
+    newForm.dataset.id = formCount;
+    newForm.innerHTML = `
+      <div class="form-definition-header">
+        <h3>Form #${formCount}</h3>
+        <button type="button" class="btn-remove-form">Remove</button>
+      </div>
+      
+      <div class="form-group">
+        <label>Form Name*</label>
+        <input 
+          type="text" 
+          name="form-name-${formCount}"
+          placeholder="e.g. user_registration" 
+          required
+        />
+      </div>
+      
+      <div class="form-group">
+        <label>Required Slots (in order)*</label>
+        <div class="slot-order-container" id="slot-order-${formCount}">
+          <div class="slot-order-item">
+            <select name="form-slot-${formCount}-1" required>
+              <option value="">Select slot...</option>
+            </select>
+            <button type="button" class="btn-remove-slot-order">Remove</button>
           </div>
-          
-          <div class="form-group">
-            <label>Form Name*</label>
-            <input 
-              type="text" 
-              name="form-name-${formCount}"
-              placeholder="e.g. user_registration" 
-              required
-            />
-          </div>
-          
-          <div class="form-group">
-            <label>Required Slots (in order)*</label>
-            <div class="slot-order-container" id="slot-order-${formCount}">
-              <div class="slot-order-item">
-                <select name="form-slot-${formCount}-1" required>
-                  <option value="">Select slot...</option>
+        </div>
+        <br>
+        <button type="button" class="btn-add-slot-order" data-form-id="${formCount}">+ Add Slot</button>
+      </div>
+    `;
+    document.getElementById('forms-container').appendChild(newForm);
+    newForm.querySelector('.btn-remove-form').addEventListener('click', () => removeForm(formCount));
+    
+    const nameInput = newForm.querySelector(`[name="form-name-${formCount}"]`);
+    if (nameInput) {
+      nameInput.addEventListener('input', updateAllDropdowns);
+    }
+    
+    updateFormSlotDropdowns();
+    attachFormListeners(newForm);
+  });
+
+  document.getElementById('add-story-btn').addEventListener('click', () => {
+    storyCount++;
+    stepCounts[storyCount] = 1;
+    const newStory = document.createElement('div');
+    newStory.className = 'story-entry';
+    newStory.dataset.id = storyCount;
+    newStory.innerHTML = `
+      <div class="story-header">
+        <h3>Story #${storyCount}</h3>
+        <button type="button" class="btn-remove-story">Remove</button>
+      </div>
+      
+      <div class="form-group">
+        <label>Story Name*</label>
+        <input 
+          type="text" 
+          name="story-name-${storyCount}"
+          placeholder="e.g. greeting_flow" 
+          required
+        />
+      </div>
+      
+      <div class="form-group">
+        <label>Story Steps*</label>
+        <div class="story-steps-container" id="story-steps-${storyCount}">
+          <div class="story-step" data-step="1">
+            <div class="step-header">
+              <span>Step 1</span>
+              <button type="button" class="btn-remove-step">Remove</button>
+            </div>
+            <div class="step-content">
+              <select name="step-type-${storyCount}-1" class="step-type-select" required>
+                  <option value="">Select step type...</option>
+                  <option value="intent">User Intent</option>
+                  <option value="action">Bot Response</option>
+                  <option value="slot">Slot Setting</option>
+                  <option value="form">Form Activation</option>
                 </select>
-                <button type="button" class="btn-remove-slot-order">Remove</button>
+                <div class="step-value-container" id="step-value-${storyCount}-1"></div>
               </div>
             </div>
-            <br>
-            <button type="button" class="btn-add-slot-order" data-form-id="${formCount}">+ Add Slot</button>
           </div>
-        `;
-        document.getElementById('forms-container').appendChild(newForm);
-        newForm.querySelector('.btn-remove-form').addEventListener('click', () => removeForm(formCount));
+          <br>
+          <button type="button" class="btn-add-step" data-story-id="${storyCount}">+ Add Step</button>
+        </div>
+      </div>
+    `;
+    document.getElementById('stories-container').appendChild(newStory);
+    newStory.querySelector('.btn-remove-story').addEventListener('click', () => removeStory(storyCount));
+    updateStoryStepDropdowns();
+    attachStoryListeners(newStory);
+  });
+
+  function removeMapping(id) {
+    const mapping = document.querySelector(`.mapping-entry[data-id="${id}"]`);
+    if (mapping) {
+      mapping.remove();
+      
+      const mappings = document.querySelectorAll('.mapping-entry');
+      mappings.forEach((mapping, index) => {
+        const newId = index + 1;
+        mapping.dataset.id = newId;
+        mapping.querySelector('h3').textContent = `Mapping #${newId}`;
         
-        const nameInput = newForm.querySelector(`[name="form-name-${formCount}"]`);
-        if (nameInput) {
-          nameInput.addEventListener('input', updateAllDropdowns);
+        mapping.querySelectorAll('[name^="mapping-intent-"]').forEach(input => {
+          input.name = `mapping-intent-${newId}`;
+        });
+        mapping.querySelectorAll('[name^="mapping-response-"]').forEach(input => {
+          input.name = `mapping-response-${newId}`;
+        });
+      });
+      
+      mappingCount = mappings.length;
+    }
+  }
+
+  function removeForm(id) {
+    const form = document.querySelector(`.form-definition-entry[data-id="${id}"]`);
+    if (form) {
+      form.remove();
+      
+      const forms = document.querySelectorAll('.form-definition-entry');
+      forms.forEach((form, index) => {
+        const newId = index + 1;
+        form.dataset.id = newId;
+        form.querySelector('h3').textContent = `Form #${newId}`;
+        
+        form.querySelectorAll('[name^="form-name-"]').forEach(input => {
+          input.name = `form-name-${newId}`;
+        });
+        
+        const container = form.querySelector('.slot-order-container');
+        if (container) {
+          container.id = `slot-order-${newId}`;
         }
         
-        updateFormSlotDropdowns();
-        attachFormListeners(newForm);
+        const addBtn = form.querySelector('.btn-add-slot-order');
+        if (addBtn) {
+          addBtn.dataset.formId = newId;
+        }
       });
-
-      document.getElementById('add-story-btn').addEventListener('click', () => {
-        storyCount++;
-        stepCounts[storyCount] = 1;
-        const newStory = document.createElement('div');
-        newStory.className = 'story-entry';
-        newStory.dataset.id = storyCount;
-        newStory.innerHTML = `
-          <div class="story-header">
-            <h3>Story #${storyCount}</h3>
-            <button type="button" class="btn-remove-story">Remove</button>
-          </div>
-          
-          <div class="form-group">
-            <label>Story Name*</label>
-            <input 
-              type="text" 
-              name="story-name-${storyCount}"
-              placeholder="e.g. greeting_flow" 
-              required
-            />
-          </div>
-          
-          <div class="form-group">
-            <label>Story Steps*</label>
-            <div class="story-steps-container" id="story-steps-${storyCount}">
-              <div class="story-step" data-step="1">
-                <div class="step-header">
-                  <span>Step 1</span>
-                  <button type="button" class="btn-remove-step">Remove</button>
-                </div>
-                <div class="step-content">
-                  <select name="step-type-${storyCount}-1" class="step-type-select" required>
-                      <option value="">Select step type...</option>
-                      <option value="intent">User Intent</option>
-                      <option value="action">Bot Response</option>
-                      <option value="slot">Slot Setting</option>
-                      <option value="form">Form Activation</option>
-                    </select>
-                    <div class="step-value-container" id="step-value-${storyCount}-1"></div>
-                  </div>
-                </div>
-              </div>
-              <br>
-              <button type="button" class="btn-add-step" data-story-id="${storyCount}">+ Add Step</button>
-            </div>
-          </div>
-        `;
-        document.getElementById('stories-container').appendChild(newStory);
-        newStory.querySelector('.btn-remove-story').addEventListener('click', () => removeStory(storyCount));
-        updateStoryStepDropdowns();
-        attachStoryListeners(newStory);
-      });
-    });
-
-    function removeMapping(id) {
-      const mapping = document.querySelector(`.mapping-entry[data-id="${id}"]`);
-      if (mapping) {
-        mapping.remove();
-        
-        const mappings = document.querySelectorAll('.mapping-entry');
-        mappings.forEach((mapping, index) => {
-          const newId = index + 1;
-          mapping.dataset.id = newId;
-          mapping.querySelector('h3').textContent = `Mapping #${newId}`;
-          
-          mapping.querySelectorAll('[name^="mapping-intent-"]').forEach(input => {
-            input.name = `mapping-intent-${newId}`;
-          });
-          mapping.querySelectorAll('[name^="mapping-response-"]').forEach(input => {
-            input.name = `mapping-response-${newId}`;
-          });
-        });
-        
-        mappingCount = mappings.length;
-      }
-    }
-
-    function removeForm(id) {
-      const form = document.querySelector(`.form-definition-entry[data-id="${id}"]`);
-      if (form) {
-        form.remove();
-        
-        const forms = document.querySelectorAll('.form-definition-entry');
-        forms.forEach((form, index) => {
-          const newId = index + 1;
-          form.dataset.id = newId;
-          form.querySelector('h3').textContent = `Form #${newId}`;
-          
-          form.querySelectorAll('[name^="form-name-"]').forEach(input => {
-            input.name = `form-name-${newId}`;
-          });
-          
-          const container = form.querySelector('.slot-order-container');
-          if (container) {
-            container.id = `slot-order-${newId}`;
-          }
-          
-          const addBtn = form.querySelector('.btn-add-slot-order');
-          if (addBtn) {
-            addBtn.dataset.formId = newId;
-          }
-        });
         
         formCount = forms.length;
         updateAllDropdowns();
       }
     }
 
-    function removeStory(id) {
-      const story = document.querySelector(`.story-entry[data-id="${id}"]`);
-      if (story) {
-        story.remove();
-        delete stepCounts[id];
+  function removeStory(id) {
+    const story = document.querySelector(`.story-entry[data-id="${id}"]`);
+    if (story) {
+      story.remove();
+      delete stepCounts[id];
+      
+      const stories = document.querySelectorAll('.story-entry');
+      const newStepCounts = {};
+      
+      stories.forEach((story, index) => {
+        const newId = index + 1;
+        const oldId = story.dataset.id;
+        newStepCounts[newId] = stepCounts[oldId] || 1;
         
-        const stories = document.querySelectorAll('.story-entry');
-        const newStepCounts = {};
+        story.dataset.id = newId;
+        story.querySelector('h3').textContent = `Story #${newId}`;
         
-        stories.forEach((story, index) => {
-          const newId = index + 1;
-          const oldId = story.dataset.id;
-          newStepCounts[newId] = stepCounts[oldId] || 1;
-          
-          story.dataset.id = newId;
-          story.querySelector('h3').textContent = `Story #${newId}`;
-          
-          story.querySelectorAll('[name^="story-name-"]').forEach(input => {
-            input.name = `story-name-${newId}`;
-          });
-          
-          const container = story.querySelector('.story-steps-container');
-          if (container) {
-            container.id = `story-steps-${newId}`;
-          }
-          
-          const addBtn = story.querySelector('.btn-add-step');
-          if (addBtn) {
-            addBtn.dataset.storyId = newId;
-          }
+        story.querySelectorAll('[name^="story-name-"]').forEach(input => {
+          input.name = `story-name-${newId}`;
         });
         
-        stepCounts = newStepCounts;
-        storyCount = stories.length;
-      }
+        const container = story.querySelector('.story-steps-container');
+        if (container) {
+          container.id = `story-steps-${newId}`;
+        }
+        
+        const addBtn = story.querySelector('.btn-add-step');
+        if (addBtn) {
+          addBtn.dataset.storyId = newId;
+        }
+      });
+      
+      stepCounts = newStepCounts;
+      storyCount = stories.length;
     }
+  }
 
-    function attachFormListeners(formElement) {
-      const formId = formElement.dataset.id;
-      
-      const addSlotBtn = formElement.querySelector('.btn-add-slot-order');
-      if (addSlotBtn) {
-        addSlotBtn.addEventListener('click', () => {
-          const container = document.getElementById(`slot-order-${formId}`);
-          const slotCount = container.children.length + 1;
-          
-          const newSlotOrder = document.createElement('div');
-          newSlotOrder.className = 'slot-order-item';
-          newSlotOrder.innerHTML = `
-            <select name="form-slot-${formId}-${slotCount}" required>
-              <option value="">Select slot...</option>
-            </select>
-            <button type="button" class="btn-remove-slot-order">Remove</button>
-          `;
-          
-          container.appendChild(newSlotOrder);
-          updateFormSlotDropdowns();
-          
-          newSlotOrder.querySelector('.btn-remove-slot-order').addEventListener('click', () => {
-            newSlotOrder.remove();
-          });
-        });
-      }
-      
-      formElement.querySelectorAll('.btn-remove-slot-order').forEach(btn => {
-        btn.addEventListener('click', () => {
-          btn.closest('.slot-order-item').remove();
+  function attachFormListeners(formElement) {
+    const formId = formElement.dataset.id;
+    
+    const addSlotBtn = formElement.querySelector('.btn-add-slot-order');
+    if (addSlotBtn) {
+      addSlotBtn.addEventListener('click', () => {
+        const container = document.getElementById(`slot-order-${formId}`);
+        const slotCount = container.children.length + 1;
+        
+        const newSlotOrder = document.createElement('div');
+        newSlotOrder.className = 'slot-order-item';
+        newSlotOrder.innerHTML = `
+          <select name="form-slot-${formId}-${slotCount}" required>
+            <option value="">Select slot...</option>
+          </select>
+          <button type="button" class="btn-remove-slot-order">Remove</button>
+        `;
+        
+        container.appendChild(newSlotOrder);
+        updateFormSlotDropdowns();
+        
+        newSlotOrder.querySelector('.btn-remove-slot-order').addEventListener('click', () => {
+          newSlotOrder.remove();
         });
       });
     }
+    
+    formElement.querySelectorAll('.btn-remove-slot-order').forEach(btn => {
+      btn.addEventListener('click', () => {
+        btn.closest('.slot-order-item').remove();
+      });
+    });
+  }
 
-    function attachStoryListeners(storyElement) {
-      const storyId = storyElement.dataset.id;
-      
-      const addStepBtn = storyElement.querySelector('.btn-add-step');
-      if (addStepBtn) {
-        addStepBtn.addEventListener('click', () => {
-          stepCounts[storyId] = (stepCounts[storyId] || 1) + 1;
-          const stepNum = stepCounts[storyId];
-          
-          const container = document.getElementById(`story-steps-${storyId}`);
-          const newStep = document.createElement('div');
-          newStep.className = 'story-step';
-          newStep.dataset.step = stepNum;
-          newStep.innerHTML = `
-            <div class="step-header">
-              <span>Step ${stepNum}</span>
-              <button type="button" class="btn-remove-step">Remove</button>
-            </div>
-            <div class="step-content">
-              <select name="step-type-${storyId}-${stepNum}" class="step-type-select" required>
-                <option value="">Select step type...</option>
-                <option value="intent">User Intent</option>
-                <option value="action">Bot Response</option>
-                <option value="slot">Slot Setting</option>
-                <option value="form">Form Activation</option>
-              </select>
-              <div class="step-value-container" id="step-value-${storyId}-${stepNum}"></div>
-            </div>
-          `;
-          
-          container.appendChild(newStep);
-          updateStoryStepDropdowns();
-          
-          newStep.querySelector('.btn-remove-step').addEventListener('click', () => {
-            newStep.remove();
-            const remainingSteps = container.querySelectorAll('.story-step');
-            remainingSteps.forEach((step, index) => {
-              const newStepNum = index + 1;
-              step.dataset.step = newStepNum;
-              step.querySelector('.step-header span').textContent = `Step ${newStepNum}`;
-            });
-            stepCounts[storyId] = remainingSteps.length;
-          });
-        });
-      }
-      
-      storyElement.querySelectorAll('.btn-remove-step').forEach(btn => {
-        btn.addEventListener('click', () => {
-          const step = btn.closest('.story-step');
-          const container = step.closest('.story-steps-container');
-          step.remove();
-          
+  function attachStoryListeners(storyElement) {
+    const storyId = storyElement.dataset.id;
+    
+    const addStepBtn = storyElement.querySelector('.btn-add-step');
+    if (addStepBtn) {
+      addStepBtn.addEventListener('click', () => {
+        stepCounts[storyId] = (stepCounts[storyId] || 1) + 1;
+        const stepNum = stepCounts[storyId];
+        
+        const container = document.getElementById(`story-steps-${storyId}`);
+        const newStep = document.createElement('div');
+        newStep.className = 'story-step';
+        newStep.dataset.step = stepNum;
+        newStep.innerHTML = `
+          <div class="step-header">
+            <span>Step ${stepNum}</span>
+            <button type="button" class="btn-remove-step">Remove</button>
+          </div>
+          <div class="step-content">
+            <select name="step-type-${storyId}-${stepNum}" class="step-type-select" required>
+              <option value="">Select step type...</option>
+              <option value="intent">User Intent</option>
+              <option value="action">Bot Response</option>
+              <option value="slot">Slot Setting</option>
+              <option value="form">Form Activation</option>
+            </select>
+            <div class="step-value-container" id="step-value-${storyId}-${stepNum}"></div>
+          </div>
+        `;
+        
+        container.appendChild(newStep);
+        updateStoryStepDropdowns();
+        
+        newStep.querySelector('.btn-remove-step').addEventListener('click', () => {
+          newStep.remove();
           const remainingSteps = container.querySelectorAll('.story-step');
           remainingSteps.forEach((step, index) => {
             const newStepNum = index + 1;
@@ -1168,6 +1138,23 @@ document.getElementById('chatbot-creation-form').addEventListener('submit', (e) 
         });
       });
     }
+    
+    storyElement.querySelectorAll('.btn-remove-step').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const step = btn.closest('.story-step');
+        const container = step.closest('.story-steps-container');
+        step.remove();
+        
+        const remainingSteps = container.querySelectorAll('.story-step');
+        remainingSteps.forEach((step, index) => {
+          const newStepNum = index + 1;
+          step.dataset.step = newStepNum;
+          step.querySelector('.step-header span').textContent = `Step ${newStepNum}`;
+        });
+        stepCounts[storyId] = remainingSteps.length;
+      });
+    });
+  }
 
     document.addEventListener('DOMContentLoaded', () => {
       const existingForm = document.querySelector('.form-definition-entry[data-id="1"]');
@@ -1181,7 +1168,7 @@ document.getElementById('chatbot-creation-form').addEventListener('submit', (e) 
       }
     });
     
-    document.getElementById('chatbot-creation-form').addEventListener('submit', (e) => {
+    document.getElementById('chatbot-creation-form').addEventListener('submit', async (e) => {
       e.preventDefault();
       
       const chatbotData = {
@@ -1299,7 +1286,13 @@ document.getElementById('chatbot-creation-form').addEventListener('submit', (e) 
 
         chatbotData.stories.push(storyData);
       });
-    });
+
+    console.log(chatbotData);
+    console.log(chatbotData.slots);
+    console.log(chatbotData.intents);
+    console.log(chatbotData.utterances);
+    console.log(chatbotData.mappings);
+    return;
 
     try {
       const response = await fetch('/api/new-chatbot', {
@@ -1338,5 +1331,5 @@ document.getElementById('chatbot-creation-form').addEventListener('submit', (e) 
       message.style.color = '#B71C1C';
     }
   });
-  </script>
-</Layout>
+  });
+</script>
