@@ -3,7 +3,7 @@ import Layout from '../layouts/Layout.astro';
 import '../styles/new-chatbot.css';
 ---
 
-<Layout title="Create New Chatbot | SmartFlowchatbots">
+<Layout title="Create New Chatbot | Hacret">
   <main class="new-chatbot-container">
     <div class="chatbots-header">
       <h1>Create New Chatbot</h1>
@@ -139,14 +139,14 @@ import '../styles/new-chatbot.css';
             </div>
             
             <div class="form-group">
-              <label>Intent</label>
+              <label>Intent*</label>
               <select name="mapping-intent-1" required>
                 <option value="">Select an intent...</option>
               </select>
             </div>
             
             <div class="form-group">
-              <label>Response Type</label>
+              <label>Response Type*</label>
               <select name="mapping-type-1" class="mapping-type-select" required>
                 <option value="">Select type...</option>
                 <option value="response">Bot Response</option>
@@ -154,10 +154,22 @@ import '../styles/new-chatbot.css';
               </select>
             </div>
 
-            <div class="form-group mapping-value-container" id="mapping-value-1"></div>
+            <div class="form-group mapping-response-container" id="mapping-response-1" style="display: none;">
+              <label>Bot Response*</label>
+              <select name="mapping-response-1">
+                <option value="">Select a response...</option>
+              </select>
+            </div>
+
+            <div class="form-group mapping-form-container" id="mapping-form-1" style="display: none;">
+              <label>Form to Activate*</label>
+              <select name="mapping-form-1">
+                <option value="">Select a form...</option>
+              </select>
+            </div>
           </div>
         </div>
-  
+
         <button type="button" id="add-mapping-btn" class="btn-outline">
           + Add New Mapping
         </button>
@@ -340,33 +352,62 @@ import '../styles/new-chatbot.css';
     }
 
     function updateMappingDropdowns() {
-        const intents = getAvailableIntents();
-        const responses = getAvailableResponses();
+      const intents = getAvailableIntents();
+      const responses = getAvailableResponses();
+      const forms = getAvailableForms();
 
-        document.querySelectorAll('[name^="mapping-intent-"]').forEach(select => {
-            const currentValue = select.value;
-            select.innerHTML = '<option value="">Select an intent...</option>';
-            intents.forEach(intent => {
-                const option = document.createElement('option');
-                option.value = intent.name;
-                option.textContent = intent.name;
-                if (intent.name === currentValue) option.selected = true;
-                select.appendChild(option);
-            });
+      document.querySelectorAll('[name^="mapping-intent-"]').forEach(select => {
+        const currentValue = select.value;
+        select.innerHTML = '<option value="">Select an intent...</option>';
+        intents.forEach(intent => {
+          const option = document.createElement('option');
+          option.value = intent.name;
+          option.textContent = intent.name;
+          if (intent.name === currentValue) option.selected = true;
+          select.appendChild(option);
         });
+      });
 
-        document.querySelectorAll('[name^="mapping-response-"]').forEach(select => {
-            const currentValue = select.value;
-            select.innerHTML = '<option value="">Select a response...</option>';
-            responses.forEach(response => {
-                const option = document.createElement('option');
-                option.value = response.name;
-                option.textContent = response.name;
-                if (response.name === currentValue) option.selected = true;
-                select.appendChild(option);
-            });
+      document.querySelectorAll('[name^="mapping-response-"]').forEach(select => {
+        const currentValue = select.value;
+        select.innerHTML = '<option value="">Select a response...</option>';
+        responses.forEach(response => {
+          const option = document.createElement('option');
+          option.value = response.name;
+          option.textContent = response.name;
+          if (response.name === currentValue) option.selected = true;
+          select.appendChild(option);
         });
+      });
+
+      document.querySelectorAll('[name^="mapping-form-"]').forEach(select => {
+        const currentValue = select.value;
+        select.innerHTML = '<option value="">Select a form...</option>';
+        forms.forEach(form => {
+          const option = document.createElement('option');
+          option.value = form.name;
+          option.textContent = form.name;
+          if (form.name === currentValue) option.selected = true;
+          select.appendChild(option);
+        });
+      });
     }
+
+    document.addEventListener('change', function(e) {
+      if (e.target && e.target.classList.contains('mapping-type-select')) {
+        const mappingId = e.target.name.split('-')[2];
+        const type = e.target.value;
+        
+        document.getElementById(`mapping-response-${mappingId}`).style.display = 'none';
+        document.getElementById(`mapping-form-${mappingId}`).style.display = 'none';
+        
+        if (type === 'response') {
+          document.getElementById(`mapping-response-${mappingId}`).style.display = 'block';
+        } else if (type === 'form') {
+          document.getElementById(`mapping-form-${mappingId}`).style.display = 'block';
+        }
+      }
+    });
 
     function updateFormSlotDropdowns() {
         const slots = getAvailableSlots();
@@ -636,6 +677,18 @@ import '../styles/new-chatbot.css';
         if (nameInput) {
           nameInput.addEventListener('input', updateAllDropdowns);
         }
+      }
+
+      const initialForm = document.querySelector('.form-definition-entry[data-id="1"]');
+      if (initialForm) {
+        attachFormListeners(initialForm);
+        updateFormSlotDropdowns(); 
+      }
+
+      const initialStory = document.querySelector('.story-entry[data-id="1"]');
+      if (initialStory) {
+        attachStoryListeners(initialStory);
+        updateStoryStepDropdowns(); 
       }
 
       const initialStoryRemove = document.querySelector('.btn-remove-story');
@@ -982,9 +1035,20 @@ import '../styles/new-chatbot.css';
         mapping.querySelectorAll('[name^="mapping-intent-"]').forEach(input => {
           input.name = `mapping-intent-${newId}`;
         });
+        mapping.querySelectorAll('[name^="mapping-type-"]').forEach(input => {
+          input.name = `mapping-type-${newId}`;
+        });
         mapping.querySelectorAll('[name^="mapping-response-"]').forEach(input => {
           input.name = `mapping-response-${newId}`;
         });
+        mapping.querySelectorAll('[name^="mapping-form-"]').forEach(input => {
+          input.name = `mapping-form-${newId}`;
+        });
+        
+        const responseContainer = mapping.querySelector('.mapping-response-container');
+        const formContainer = mapping.querySelector('.mapping-form-container');
+        if (responseContainer) responseContainer.id = `mapping-response-${newId}`;
+        if (formContainer) formContainer.id = `mapping-form-${newId}`;
       });
       
       mappingCount = mappings.length;
@@ -1060,37 +1124,38 @@ import '../styles/new-chatbot.css';
   }
 
   function attachFormListeners(formElement) {
-    const formId = formElement.dataset.id;
-    
-    const addSlotBtn = formElement.querySelector('.btn-add-slot-order');
-    if (addSlotBtn) {
-      addSlotBtn.addEventListener('click', () => {
-        const container = document.getElementById(`slot-order-${formId}`);
-        const slotCount = container.children.length + 1;
-        
-        const newSlotOrder = document.createElement('div');
-        newSlotOrder.className = 'slot-order-item';
-        newSlotOrder.innerHTML = `
-          <select name="form-slot-${formId}-${slotCount}" required>
-            <option value="">Select slot...</option>
-          </select>
-          <button type="button" class="btn-remove-slot-order">Remove</button>
-        `;
-        
-        container.appendChild(newSlotOrder);
-        updateFormSlotDropdowns();
-        
-        newSlotOrder.querySelector('.btn-remove-slot-order').addEventListener('click', () => {
-          newSlotOrder.remove();
-        });
+      const formId = formElement.dataset.id;
+      
+      const addSlotBtn = formElement.querySelector('.btn-add-slot-order');
+      if (addSlotBtn) {
+          addSlotBtn.addEventListener('click', () => {
+              const container = document.getElementById(`slot-order-${formId}`);
+              const slotCount = container.children.length + 1;
+              
+              const newSlotOrder = document.createElement('div');
+              newSlotOrder.className = 'slot-order-item';
+              newSlotOrder.innerHTML = `
+                  <select name="form-slot-${formId}-${slotCount}" required>
+                      <option value="">Select slot...</option>
+                  </select>
+                  <button type="button" class="btn-remove-slot-order">Remove</button>
+              `;
+              
+              container.appendChild(newSlotOrder);
+              updateFormSlotDropdowns();
+              
+              newSlotOrder.querySelector('.btn-remove-slot-order').addEventListener('click', () => {
+                  newSlotOrder.remove();
+              });
+          });
+      }
+      
+      formElement.querySelectorAll('.btn-remove-slot-order').forEach(btn => {
+          btn.addEventListener('click', (e) => {
+              e.preventDefault();
+              btn.closest('.slot-order-item').remove();
+          });
       });
-    }
-    
-    formElement.querySelectorAll('.btn-remove-slot-order').forEach(btn => {
-      btn.addEventListener('click', () => {
-        btn.closest('.slot-order-item').remove();
-      });
-    });
   }
 
   function attachStoryListeners(storyElement) {
@@ -1099,7 +1164,7 @@ import '../styles/new-chatbot.css';
     const addStepBtn = storyElement.querySelector('.btn-add-step');
     if (addStepBtn) {
       addStepBtn.addEventListener('click', () => {
-        stepCounts[storyId] = (stepCounts[storyId] || 1) + 1;
+        stepCounts[storyId] = (stepCounts[storyId] || 0) + 1;
         const stepNum = stepCounts[storyId];
         
         const container = document.getElementById(`story-steps-${storyId}`);
